@@ -1,0 +1,7 @@
+2017-07-03 15:38:03,996 [__main__] INFO:	Firing up the GUI window.
+2017-07-03 15:38:21,330 [__main__] INFO:	Running through prechecks...
+2017-07-03 15:38:21,331 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-A800dars: [Errno 2] No such file or directory: '/dev/tty.usbserial-A800dars'")
+2017-07-03 15:38:21,331 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial: [Errno 2] No such file or directory: '/dev/tty.usbserial'")
+2017-07-03 15:38:21,331 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-AE01I93I: [Errno 2] No such file or directory: '/dev/tty.usbserial-AE01I93I'")
+2017-07-03 15:38:21,331 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbmodem1411: [Errno 2] No such file or directory: '/dev/tty.usbmodem1411'")
+2017-07-03 15:39:29,161 [__main__] WARNING:	System has not passed health check!
