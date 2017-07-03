@@ -197,7 +197,7 @@ class CalBoard_Controller(Controller_Parent):
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[3], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 		logger.info("Starting Calibration Board Controller")
-		#print("Connected over serial at " + str(self.ser.name))
+		logger.debug("Connected over serial at " + str(self.ser.name))
 
 	def is_healthy(self):
 		if (self.cmd_controller("?") == '1\r\n'):
@@ -507,7 +507,7 @@ def system_health_check(app):
 
 	bc = Bath_Controller(app)
 	if (bc.is_healthy() == True):
-		# bath controller is healthy and can continue need to put up something into details or logging
+		# bath controller is healthy and can continue
 		logger.debug("Bath Controller is healthy, moving forward.\n\n")
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
@@ -518,7 +518,7 @@ def system_health_check(app):
 
 	vc = Valve_Controller(app)
 	if (vc.is_healthy() == True):
-		# valve controller is healthy and can continue need to put up something into details or logging
+		# valve controller is healthy and can continue
 		logger.debug("Valve Controller is healthy, moving forward.\n\n")
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
@@ -529,7 +529,7 @@ def system_health_check(app):
 
 	pc = Pump_Controller()
 	if (pc.is_healthy() == True):
-		# pump controller is healthy and can continue need to put up something into details or logging
+		# pump controller is healthy and can continue
 		logger.debug("Pump Controller is healthy, moving forward.\n\n")
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
@@ -537,6 +537,18 @@ def system_health_check(app):
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
+
+	cc = CalBoard_Controller()
+	if (cc.is_healthy() == True):
+		# calboard controller is healthy and can continue
+		logger.debug("Calboard Controller is healthy, moving forward.\n\n")
+	else:
+		# something is wrong and need to trip a pause and alarm and wait for user input
+		err_msg = "Calboard is unhealthy, stopping calibration.\n\n"
+		app.errors.set(err_msg)
+		logger.error(err_msg)
+		return(False)
+
 
 	# MFCs controller
 
@@ -566,9 +578,10 @@ def calibrate_master(app):
 	bc = Bath_Controller(app)
 	vc = Valve_Controller(app)
 	pc = Pump_Controller()
+	cc = CalBoard_Controller()
 	#sc = Sampling_Controller()
 
-	time.sleep(1) # allow controller startup time
+	time.sleep(2) # allow controller startup time
 
 
 	### Startup Procedure
@@ -603,12 +616,16 @@ def calibrate_master(app):
 	waiting_for_sample		= False	# this is set true after temp reached and before sampling is done
 	app.currently_sampling 	= False # this is a temp solution until the real Sampling Controller is designed
 
+	cc.state_one() # put the calibration board into normal calibration operation state
+
 	calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
 
 def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
 	
 	# TODO need to think about what happens when a user assumes manual control and changes temp and pressure
 		# will they actually do this during calibration?
+
+	# test this entirely
 
 	if app.paused:
 		logger.debug("Calibration paused")
@@ -618,7 +635,9 @@ def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_cha
 		logger.debug("Calibration ongoing.")
 		if ready_for_pres_change:
 			logger.debug("Ready for pressure change.")
+			# TODO do I need to check if the pressure is actually correct or just log it for data collection?
 			vc.set_valve(valve_queue.popleft())
+			logger.info("Pressure is: " + str(cc.read_press()))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
@@ -662,7 +681,6 @@ def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_cha
 
 def main():
 	app = Application()         
-
 	app.mainloop()    
 
 if __name__ == '__main__':
