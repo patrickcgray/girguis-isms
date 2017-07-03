@@ -2,6 +2,16 @@
 
 This code allows the Girguis Lab In-Situ Mass Spectrometer to be calibrated automatically before a deployment.
 
+
+## Operation of the ISMS Calibration Station
+Yeah we need to figure this out...
+
+## File Overview
+**calboard_sketch/calboard_sketch.ino** # sketch for the arduino connected to the Calibration Board  
+**README.md**  # documentation  
+**arduino_comm.py**  # test file for controlling arduino and commanding via python  
+**calibrate_isms.py** # main control file for calibrating the mass spec  
+
 ## Tech Stack
 #### Languages
 * Python
