@@ -195,7 +195,8 @@ class Pump_Controller(Controller_Parent):
 
 class CalBoard_Controller(Controller_Parent):
 	def __init__(self):
-		self.ser = serial.Serial(serial_list[3], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
+		self.ser = serial.Serial(serial_list[3], 9600, timeout=3)
+		time.sleep(1)
 		logger.info("Starting Calibration Board Controller")
 		logger.debug("Connected over serial at " + str(self.ser.name))
 
@@ -220,27 +221,33 @@ class CalBoard_Controller(Controller_Parent):
 
 	def state_one(self):
 		# Normal operation while running the mass spec
-		self.cmd_controller("valves 1")
+		if self.cmd_controller("valves 1") == "valves 1\r\n":
+			return True
+		return False
 
 	def state_two(self):
 		# Filling an empty fluid reservoir
-		self.cmd_controller("valves 2")
+		if self.cmd_controller("valves 2") == "valves 2\r\n":
+			return True
+		return False
 
 	def state_three(self):
 		# Emptying the fluid reservoir
     	# Fluid is pushed out of reservoir by gas
-		self.cmd_controller("valves 3")
+		if self.cmd_controller("valves 3") == "valves 3\r\n":
+			return True
+		return False
 
 	def flush_on(self):
 		# Ensure that we're in state 2 before doing this
 		if (self.cmd_controller("flushOn") == "flushOn"):
-			# we are flushing
-			pass
+			return True
+		return False
 
 	def flush_off(self):
 		if (self.cmd_controller("flushOff") == "flushOff"):
-			# flush pump turned off
-			pass
+			return True
+		return False
 
 	def read_press(self):
 		#Command to get the pressure values, three values of the form "num, num, num" returned as a list of ints
@@ -505,6 +512,8 @@ def system_health_check(app):
 
 	### Test Health of Controllers
 
+	"""
+
 	bc = Bath_Controller(app)
 	if (bc.is_healthy() == True):
 		# bath controller is healthy and can continue
@@ -537,6 +546,8 @@ def system_health_check(app):
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
+
+	"""
 
 	cc = CalBoard_Controller()
 	if (cc.is_healthy() == True):
@@ -575,9 +586,9 @@ def calibrate_master(app):
 	app.begin_timer(time.time())
 	# start things up in here
 
-	bc = Bath_Controller(app)
-	vc = Valve_Controller(app)
-	pc = Pump_Controller()
+#	bc = Bath_Controller(app)
+#	vc = Valve_Controller(app)
+#	pc = Pump_Controller()
 	cc = CalBoard_Controller()
 	#sc = Sampling_Controller()
 

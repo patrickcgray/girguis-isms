@@ -15,13 +15,10 @@ while True:
     user_input = raw_input()
     if user_input == "-1":
         break
-    print(repr(user_input))
     if user_input == '':
         pass
     else: 
         # do I need to make sure it doesn't overrun the buffer on the arduino side?
         ser.write(user_input)
-    print("reading line")
     newest_line = ser.readline() # Read the newest output from the Arduino
     print(newest_line)
-    print("just read line")
