@@ -29,7 +29,7 @@ logger.setLevel(logging.DEBUG)
 ### Serial Device Controllers ###
 
 # [bath, valve controller, hplc controller, ]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14131']
 serial_check_list = [None] * len(serial_list)
 
 class Controller_Parent(object):
@@ -62,7 +62,7 @@ class Bath_Controller(Controller_Parent):
 	def is_healthy(self):
 		# this command stops the controller so only use upon startup
 		if (self.cmd_controller("W RR -1") == "$\r\n"):
-			self.continuous_update() # Bath is healthy to get it updating temp readout
+			#self.continuous_update() # Bath is healthy to get it updating temp readout
 			return(True)
 		else:
 			return(False)
@@ -149,12 +149,17 @@ class Valve_Controller(Controller_Parent):
 
 	def set_valve(self, valve_number):
 		if (valve_number > 0 and valve_number < 7):
-			ser_rsp = self.cmd_controller("GO " + str(valve_number))
-			if ser_rsp != "bad cmd":
-				logger.debug("Setting current valve to: " + str(valve_number))
-				self.app.current_valve.set(valve_number)
-				time.sleep(.5) # TODO need to calculate how long to wait for pump to match pressure
+			current_position_response = self.cmd_controller("CP")
+			current_position = int(filter(str.isdigit, current_position_response))
+			if valve_number == current_position:
 				return(True)
+			else:
+				ser_rsp = self.cmd_controller("GO " + str(valve_number))
+				if ser_rsp != "bad cmd":
+					logger.debug("Setting current valve to: " + str(valve_number))
+					self.app.current_valve.set(valve_number)
+					time.sleep(.5) # TODO need to calculate how long to wait for pump to match pressure
+					return(True)
 		return(False)
 
 #TODO need to look into fault clearing after overpressure
@@ -512,8 +517,6 @@ def system_health_check(app):
 
 	### Test Health of Controllers
 
-	"""
-
 	bc = Bath_Controller(app)
 	if (bc.is_healthy() == True):
 		# bath controller is healthy and can continue
@@ -546,8 +549,6 @@ def system_health_check(app):
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
-
-	"""
 
 	cc = CalBoard_Controller()
 	if (cc.is_healthy() == True):
@@ -586,9 +587,9 @@ def calibrate_master(app):
 	app.begin_timer(time.time())
 	# start things up in here
 
-#	bc = Bath_Controller(app)
-#	vc = Valve_Controller(app)
-#	pc = Pump_Controller()
+	bc = Bath_Controller(app)
+	vc = Valve_Controller(app)
+	pc = Pump_Controller()
 	cc = CalBoard_Controller()
 	#sc = Sampling_Controller()
 
@@ -601,23 +602,40 @@ def calibrate_master(app):
 
 	data collection is turned on
 
-	run through prechecks (above)
+	run through prechecks (manually call check_health by running prechecks)
 
-	fill the fluid reservoir
-		solenoid valves are in state 2
+	manually check FR level and click to refill if needed
+
+	get solenoids into correct state
 
 	get the loops up to their operational pressure
-		hplc turns on now
+		HPLC turns on now
 		MFCs turn on now
 
 	"""
-	# operational values
+
+	cc.state_two() # state to for filling the fluid reservoir
+	time.sleep(1)
+	cc.flush_on() # begin filling fluid reservoir
+	time.sleep(1)
+	cc.flush_off() # stop filling FR
+	time.sleep(2)
+
+	cc.state_one() # put the calibration board into normal calibration operation state
+
+	# turning on the HPLC TODO need to decide what this pressure limit is
+	#pc.turn_on()
+	#pc.set_pressure_limit(4000)
+
+	# turning on the MFCs
+
+	# operational values for queues
 	#valve_queue 	= deque([1, 2, 3, 4, 5, 6])
 	#temp_queue 		= deque([6, 4, 2])
 
-	# testing values
+	# testing values for queues
 	valve_queue 	= deque([1, 2])
-	temp_queue 		= deque([16.1, 16.2])
+	temp_queue 		= deque([20.1, 20.2])
 
 
 	# Boolean flags to inform calibrate_slave() about its proper state
@@ -627,11 +645,9 @@ def calibrate_master(app):
 	waiting_for_sample		= False	# this is set true after temp reached and before sampling is done
 	app.currently_sampling 	= False # this is a temp solution until the real Sampling Controller is designed
 
-	cc.state_one() # put the calibration board into normal calibration operation state
+	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
 
-	calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
-
-def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
+def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
 	
 	# TODO need to think about what happens when a user assumes manual control and changes temp and pressure
 		# will they actually do this during calibration?
@@ -639,8 +655,8 @@ def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_cha
 	# test this entirely
 
 	if app.paused:
-		logger.debug("Calibration paused")
-		app.details.set("Calibration paused!")
+		logger.debug("Calibration paused.")
+		app.details.set("Calibration paused.")
 	else:
 		app.details.set("Calibration ongoing.")
 		logger.debug("Calibration ongoing.")
@@ -677,7 +693,7 @@ def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_cha
 					ready_for_temp_change = True
 				elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
 					logger.debug("Valve queue still exists.")
-					temp_queue = deque([16.1, 16.2])
+					temp_queue = deque([20.1, 20.2])
 					ready_for_pres_change = True
 				else: # if there are not temps and no pressures left the calibration is complete
 					app.status.set("Calibration complete!")
@@ -687,7 +703,7 @@ def calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_cha
 					return 
 
 	# check state every 5 seconds and take necessary next action if not waiting
-	app.after(5000, lambda: calibrate_slave(app, bc, vc, pc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample))
+	app.after(5000, lambda: calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample))
 
 
 def main():

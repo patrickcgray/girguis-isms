@@ -218,3 +218,553 @@
 
 2017-07-06 16:56:11,084 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-A800dars: [Errno 2] No such file or directory: '/dev/tty.usbserial-A800dars'")
 2017-07-06 16:56:11,084 [__main__] WARNING:	Not able to kill bath.
+2017-07-06 17:04:45,854 [__main__] INFO:	Firing up the GUI window.
+2017-07-06 17:24:00,247 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-06 17:24:00,253 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-A800dars: [Errno 2] No such file or directory: '/dev/tty.usbserial-A800dars'")
+2017-07-06 17:24:00,253 [__main__] WARNING:	Not able to kill bath.
+2017-07-07 14:07:23,426 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:05:09,722 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:05:15,114 [__main__] INFO:	Running through prechecks...
+2017-07-07 16:05:15,121 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:05:15,138 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:05:15,143 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:05:15,143 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbmodem1411: [Errno 2] No such file or directory: '/dev/tty.usbmodem1411'")
+2017-07-07 16:05:15,148 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:05:15,148 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:05:16,148 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:05:17,149 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.684\r\n'
+2017-07-07 16:05:17,153 [__main__] DEBUG:	Bath Controller is healthy, moving forward.
+
+
+2017-07-07 16:05:17,162 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:05:17,162 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:05:18,164 [__main__] DEBUG:	Output from Valve Controller cmd: 'I-PD-AMHX88RD1\r01/03/2008\r'
+2017-07-07 16:05:18,164 [__main__] DEBUG:	Valve Controller is healthy, moving forward.
+
+
+2017-07-07 16:05:18,169 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:05:18,170 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:05:19,170 [__main__] DEBUG:	Output from Bath Controller cmd: 'OK,v1.03 161794 firmware/'
+2017-07-07 16:05:19,171 [__main__] DEBUG:	Pump Controller is healthy, moving forward.
+
+
+2017-07-07 16:05:23,156 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.683\r\n'
+2017-07-07 16:05:29,160 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.681\r\n'
+2017-07-07 16:05:35,164 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.682\r\n'
+2017-07-07 16:05:41,167 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.681\r\n'
+2017-07-07 16:05:47,170 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.680\r\n'
+2017-07-07 16:05:53,174 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.681\r\n'
+2017-07-07 16:05:59,177 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.680\r\n'
+2017-07-07 16:06:05,179 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.680\r\n'
+2017-07-07 16:09:11,009 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:09:14,068 [__main__] INFO:	Running through prechecks...
+2017-07-07 16:09:14,074 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:09:14,087 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:09:14,092 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:09:14,099 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:09:14,103 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:09:14,103 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:09:15,105 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:09:15,105 [__main__] DEBUG:	Bath Controller is healthy, moving forward.
+
+
+2017-07-07 16:09:16,087 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:09:16,088 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:09:17,088 [__main__] DEBUG:	Output from Valve Controller cmd: 'I-PD-AMHX88RD1\r01/03/2008\r'
+2017-07-07 16:09:17,088 [__main__] DEBUG:	Valve Controller is healthy, moving forward.
+
+
+2017-07-07 16:09:17,094 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:09:17,094 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:09:18,095 [__main__] DEBUG:	Output from Bath Controller cmd: 'OK,v1.03 161794 firmware/'
+2017-07-07 16:09:18,096 [__main__] DEBUG:	Pump Controller is healthy, moving forward.
+
+
+2017-07-07 16:09:19,098 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:09:19,098 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:09:20,111 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '1\r\n'
+2017-07-07 16:09:20,111 [__main__] DEBUG:	Calboard Controller is healthy, moving forward.
+
+
+2017-07-07 16:09:20,111 [__main__] DEBUG:	Precheck complete! System healthy.
+2017-07-07 16:09:28,536 [__main__] INFO:	Calibration initiated.
+2017-07-07 16:09:28,542 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:09:28,542 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:09:28,551 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:09:28,551 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:09:28,555 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:09:28,556 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:09:29,557 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:09:29,558 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:09:32,579 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 2\r\n'
+2017-07-07 16:09:34,676 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOn\r\n'
+2017-07-07 16:09:36,777 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOff\r\n'
+2017-07-07 16:09:39,873 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 1\r\n'
+2017-07-07 16:09:39,875 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:09:39,875 [__main__] DEBUG:	Ready for pressure change.
+2017-07-07 16:09:40,875 [__main__] DEBUG:	Output from Valve Controller cmd: ''
+2017-07-07 16:09:40,876 [__main__] DEBUG:	Setting current valve to: 1
+2017-07-07 16:10:08,063 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-07 16:10:08,064 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:10:08,064 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:10:09,064 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:10:15,994 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:10:18,235 [__main__] INFO:	Running through prechecks...
+2017-07-07 16:10:18,239 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:10:18,253 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:10:18,257 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:10:18,262 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:10:18,266 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:10:18,266 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:10:19,267 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:10:19,268 [__main__] DEBUG:	Bath Controller is healthy, moving forward.
+
+
+2017-07-07 16:10:20,252 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:10:20,253 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:10:21,254 [__main__] DEBUG:	Output from Valve Controller cmd: 'I-PD-AMHX88RD1\r01/03/2008\r'
+2017-07-07 16:10:21,254 [__main__] DEBUG:	Valve Controller is healthy, moving forward.
+
+
+2017-07-07 16:10:21,259 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:10:21,260 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:10:22,261 [__main__] DEBUG:	Output from Bath Controller cmd: 'OK,v1.03 161794 firmware/'
+2017-07-07 16:10:22,261 [__main__] DEBUG:	Pump Controller is healthy, moving forward.
+
+
+2017-07-07 16:10:23,264 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:10:23,264 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:10:24,276 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '1\r\n'
+2017-07-07 16:10:24,277 [__main__] DEBUG:	Calboard Controller is healthy, moving forward.
+
+
+2017-07-07 16:10:24,277 [__main__] DEBUG:	Precheck complete! System healthy.
+2017-07-07 16:10:26,700 [__main__] INFO:	Calibration initiated.
+2017-07-07 16:10:26,705 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:10:26,705 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:10:26,715 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:10:26,715 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:10:26,719 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:10:26,719 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:10:27,720 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:10:27,721 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:10:30,744 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 2\r\n'
+2017-07-07 16:10:32,841 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOn\r\n'
+2017-07-07 16:10:34,938 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOff\r\n'
+2017-07-07 16:10:38,035 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 1\r\n'
+2017-07-07 16:10:38,035 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:10:38,035 [__main__] DEBUG:	Ready for pressure change.
+2017-07-07 16:10:39,037 [__main__] DEBUG:	Output from Valve Controller cmd: 'GO1 = Bad command\r'
+2017-07-07 16:10:39,037 [__main__] ERROR:	Error from Valve Controller: 'GO1 = Bad command\r'
+2017-07-07 16:10:40,140 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '607, 551, 500\r\n'
+2017-07-07 16:10:40,140 [__main__] INFO:	Pressure is: [607, 551, 500]
+2017-07-07 16:10:40,140 [__main__] DEBUG:	Ready for temp change.
+2017-07-07 16:10:41,144 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:10:41,145 [__main__] DEBUG:	Setting goal temp to: 20.1
+2017-07-07 16:10:42,145 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:10:42,146 [__main__] INFO:	Bath Controller: Turned ON
+2017-07-07 16:10:42,146 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:10:43,147 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.651\r\n'
+2017-07-07 16:10:43,147 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.651
+2017-07-07 16:11:06,938 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-07 16:11:06,938 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:11:06,939 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:11:07,939 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:25:23,357 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:25:26,331 [__main__] INFO:	Running through prechecks...
+2017-07-07 16:25:26,335 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:25:26,348 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:25:26,353 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:25:26,358 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:25:26,362 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:25:26,362 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:25:27,364 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:25:27,364 [__main__] DEBUG:	Bath Controller is healthy, moving forward.
+
+
+2017-07-07 16:25:28,348 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:25:28,348 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:25:29,350 [__main__] DEBUG:	Output from Valve Controller cmd: 'I-PD-AMHX88RD1\r01/03/2008\r'
+2017-07-07 16:25:29,350 [__main__] DEBUG:	Valve Controller is healthy, moving forward.
+
+
+2017-07-07 16:25:29,355 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:25:29,355 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:25:30,357 [__main__] DEBUG:	Output from Bath Controller cmd: 'OK,v1.03 161794 firmware/'
+2017-07-07 16:25:30,357 [__main__] DEBUG:	Pump Controller is healthy, moving forward.
+
+
+2017-07-07 16:25:31,359 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:25:31,359 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:25:32,372 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '1\r\n'
+2017-07-07 16:25:32,372 [__main__] DEBUG:	Calboard Controller is healthy, moving forward.
+
+
+2017-07-07 16:25:32,372 [__main__] DEBUG:	Precheck complete! System healthy.
+2017-07-07 16:25:34,845 [__main__] INFO:	Calibration initiated.
+2017-07-07 16:25:34,850 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:25:34,850 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:25:34,859 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:25:34,859 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:25:34,864 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:25:34,864 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:25:35,865 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:25:35,865 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:25:38,888 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 2\r\n'
+2017-07-07 16:25:40,985 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOn\r\n'
+2017-07-07 16:25:43,082 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOff\r\n'
+2017-07-07 16:25:46,179 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 1\r\n'
+2017-07-07 16:25:46,179 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:25:46,179 [__main__] DEBUG:	Ready for pressure change.
+2017-07-07 16:25:47,180 [__main__] DEBUG:	Output from Valve Controller cmd: 'Position is  = 3\r'
+2017-07-07 16:25:52,777 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-07 16:25:52,777 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:25:52,778 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:25:53,778 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:26:23,256 [__main__] INFO:	Firing up the GUI window.
+2017-07-07 16:26:25,777 [__main__] INFO:	Running through prechecks...
+2017-07-07 16:26:25,782 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:26:25,796 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:26:25,800 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:26:25,805 [__main__] DEBUG:	Acquired serial connection.
+2017-07-07 16:26:25,809 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:26:25,809 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:26:26,811 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:26:26,811 [__main__] DEBUG:	Bath Controller is healthy, moving forward.
+
+
+2017-07-07 16:26:27,796 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:26:27,796 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:26:28,798 [__main__] DEBUG:	Output from Valve Controller cmd: 'I-PD-AMHX88RD1\r01/03/2008\r'
+2017-07-07 16:26:28,798 [__main__] DEBUG:	Valve Controller is healthy, moving forward.
+
+
+2017-07-07 16:26:28,803 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:26:28,804 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:26:29,805 [__main__] DEBUG:	Output from Bath Controller cmd: 'OK,v1.03 161794 firmware/'
+2017-07-07 16:26:29,805 [__main__] DEBUG:	Pump Controller is healthy, moving forward.
+
+
+2017-07-07 16:26:30,807 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:26:30,807 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:26:31,823 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '1\r\n'
+2017-07-07 16:26:31,823 [__main__] DEBUG:	Calboard Controller is healthy, moving forward.
+
+
+2017-07-07 16:26:31,823 [__main__] DEBUG:	Precheck complete! System healthy.
+2017-07-07 16:26:33,810 [__main__] INFO:	Calibration initiated.
+2017-07-07 16:26:33,815 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:26:33,815 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:26:33,827 [__main__] INFO:	Starting Valve Controller
+2017-07-07 16:26:33,827 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial
+2017-07-07 16:26:33,831 [__main__] INFO:	Starting HPLC Pump Controller
+2017-07-07 16:26:33,831 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-AE01I93I
+2017-07-07 16:26:34,833 [__main__] INFO:	Starting Calibration Board Controller
+2017-07-07 16:26:34,833 [__main__] DEBUG:	Connected over serial at /dev/tty.usbmodem14131
+2017-07-07 16:26:37,856 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 2\r\n'
+2017-07-07 16:26:39,953 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOn\r\n'
+2017-07-07 16:26:42,050 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'flushOff\r\n'
+2017-07-07 16:26:45,147 [__main__] DEBUG:	Output from Calibration Board Controller cmd: 'valves 1\r\n'
+2017-07-07 16:26:45,147 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:26:45,147 [__main__] DEBUG:	Ready for pressure change.
+2017-07-07 16:26:46,149 [__main__] DEBUG:	Output from Valve Controller cmd: 'Position is  = 3\r'
+2017-07-07 16:26:47,150 [__main__] DEBUG:	Output from Valve Controller cmd: ''
+2017-07-07 16:26:47,150 [__main__] DEBUG:	Setting current valve to: 1
+2017-07-07 16:26:48,751 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '606, 543, 493\r\n'
+2017-07-07 16:26:48,752 [__main__] INFO:	Pressure is: [606, 543, 493]
+2017-07-07 16:26:48,752 [__main__] DEBUG:	Ready for temp change.
+2017-07-07 16:26:49,753 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:26:49,753 [__main__] DEBUG:	Setting goal temp to: 20.1
+2017-07-07 16:26:50,755 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:26:50,755 [__main__] INFO:	Bath Controller: Turned ON
+2017-07-07 16:26:50,755 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:26:51,757 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.573\r\n'
+2017-07-07 16:26:51,757 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.573
+2017-07-07 16:26:56,759 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:26:56,759 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:26:57,761 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.533\r\n'
+2017-07-07 16:26:57,761 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.533
+2017-07-07 16:27:02,763 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:02,763 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:03,764 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.534\r\n'
+2017-07-07 16:27:03,764 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.534
+2017-07-07 16:27:08,766 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:08,766 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:09,768 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.531\r\n'
+2017-07-07 16:27:09,768 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.531
+2017-07-07 16:27:14,769 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:14,770 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:15,771 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.514\r\n'
+2017-07-07 16:27:15,771 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.514
+2017-07-07 16:27:20,772 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:20,772 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:21,773 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.488\r\n'
+2017-07-07 16:27:21,774 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.488
+2017-07-07 16:27:26,790 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:26,790 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:27,790 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.460\r\n'
+2017-07-07 16:27:27,791 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.46
+2017-07-07 16:27:32,793 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:32,793 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:33,795 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.429\r\n'
+2017-07-07 16:27:33,795 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.429
+2017-07-07 16:27:38,797 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:38,797 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:39,799 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.388\r\n'
+2017-07-07 16:27:39,799 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.388
+2017-07-07 16:27:44,801 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:44,801 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:45,803 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.355\r\n'
+2017-07-07 16:27:45,803 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.355
+2017-07-07 16:27:50,805 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:50,806 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:51,806 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.315\r\n'
+2017-07-07 16:27:51,807 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.315
+2017-07-07 16:27:56,809 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:27:56,809 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:27:57,810 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.275\r\n'
+2017-07-07 16:27:57,810 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.275
+2017-07-07 16:28:02,811 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:02,812 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:03,813 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.237\r\n'
+2017-07-07 16:28:03,813 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.237
+2017-07-07 16:28:08,815 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:08,815 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:09,815 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.191\r\n'
+2017-07-07 16:28:09,815 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.191
+2017-07-07 16:28:14,818 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:14,818 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:15,818 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.148\r\n'
+2017-07-07 16:28:15,819 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.148
+2017-07-07 16:28:20,821 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:20,821 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:21,821 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.101\r\n'
+2017-07-07 16:28:21,822 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.101
+2017-07-07 16:28:26,823 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:26,824 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:27,825 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.054\r\n'
+2017-07-07 16:28:27,825 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.054
+2017-07-07 16:28:32,827 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:32,828 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:33,828 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +21.007\r\n'
+2017-07-07 16:28:33,828 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 21.007
+2017-07-07 16:28:38,830 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:38,831 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:39,832 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.959\r\n'
+2017-07-07 16:28:39,832 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.959
+2017-07-07 16:28:44,835 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:44,835 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:45,835 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.909\r\n'
+2017-07-07 16:28:45,836 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.909
+2017-07-07 16:28:50,838 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:50,838 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:51,839 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.857\r\n'
+2017-07-07 16:28:51,839 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.857
+2017-07-07 16:28:56,841 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:28:56,841 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:28:57,843 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.809\r\n'
+2017-07-07 16:28:57,843 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.809
+2017-07-07 16:29:02,845 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:02,845 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:03,845 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.757\r\n'
+2017-07-07 16:29:03,846 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.757
+2017-07-07 16:29:08,848 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:08,848 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:09,850 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.702\r\n'
+2017-07-07 16:29:09,850 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.702
+2017-07-07 16:29:14,851 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:14,851 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:15,853 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.655\r\n'
+2017-07-07 16:29:15,853 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.655
+2017-07-07 16:29:20,855 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:20,855 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:21,857 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.599\r\n'
+2017-07-07 16:29:21,857 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.599
+2017-07-07 16:29:26,859 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:26,859 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:27,861 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.548\r\n'
+2017-07-07 16:29:27,861 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.548
+2017-07-07 16:29:32,863 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:32,863 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:33,864 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.493\r\n'
+2017-07-07 16:29:33,864 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.493
+2017-07-07 16:29:38,866 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:38,867 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:39,868 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.438\r\n'
+2017-07-07 16:29:39,868 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.438
+2017-07-07 16:29:44,870 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:44,871 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:45,872 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.379\r\n'
+2017-07-07 16:29:45,872 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.379
+2017-07-07 16:29:50,874 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:50,874 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:51,875 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.321\r\n'
+2017-07-07 16:29:51,876 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.321
+2017-07-07 16:29:56,878 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:29:56,878 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:29:57,880 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.263\r\n'
+2017-07-07 16:29:57,880 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.263
+2017-07-07 16:30:02,881 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:02,881 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:03,883 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.215\r\n'
+2017-07-07 16:30:03,883 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.215
+2017-07-07 16:30:08,885 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:08,885 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:09,886 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.187\r\n'
+2017-07-07 16:30:09,886 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.187
+2017-07-07 16:30:14,888 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:14,889 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:15,890 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.178\r\n'
+2017-07-07 16:30:15,890 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.178
+2017-07-07 16:30:20,892 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:20,892 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:21,894 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.168\r\n'
+2017-07-07 16:30:21,894 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.168
+2017-07-07 16:30:26,895 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:26,896 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:27,896 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.156\r\n'
+2017-07-07 16:30:27,896 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.156
+2017-07-07 16:30:32,898 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:32,899 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:30:33,900 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.147\r\n'
+2017-07-07 16:30:33,900 [__main__] INFO:	Temperature reached. Carry on.
+2017-07-07 16:30:33,900 [__main__] DEBUG:	Temperature reached.
+2017-07-07 16:30:33,901 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:30:38,902 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:38,903 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:30:43,905 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:43,905 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:30:48,907 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:48,907 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:30:53,909 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:53,910 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:30:58,911 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:30:58,911 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:31:03,913 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:03,913 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:31:03,913 [__main__] DEBUG:	Done sampling.
+2017-07-07 16:31:03,913 [__main__] DEBUG:	Checking remaining temp and valve queues.
+2017-07-07 16:31:03,913 [__main__] DEBUG:	Temp queue still exists.
+2017-07-07 16:31:08,916 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:08,916 [__main__] DEBUG:	Ready for temp change.
+2017-07-07 16:31:09,917 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:31:09,917 [__main__] DEBUG:	Setting goal temp to: 20.2
+2017-07-07 16:31:10,918 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:31:10,918 [__main__] INFO:	Bath Controller: Turned ON
+2017-07-07 16:31:10,918 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:11,919 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.077\r\n'
+2017-07-07 16:31:11,920 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.077
+2017-07-07 16:31:16,922 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:16,922 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:17,923 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.086\r\n'
+2017-07-07 16:31:17,923 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.086
+2017-07-07 16:31:22,925 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:22,926 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:23,927 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.074\r\n'
+2017-07-07 16:31:23,928 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.074
+2017-07-07 16:31:28,929 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:28,929 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:29,930 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.094\r\n'
+2017-07-07 16:31:29,931 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.094
+2017-07-07 16:31:34,932 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:34,932 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:35,934 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.124\r\n'
+2017-07-07 16:31:35,934 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.124
+2017-07-07 16:31:40,936 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:40,936 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:31:41,938 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.156\r\n'
+2017-07-07 16:31:41,938 [__main__] INFO:	Temperature reached. Carry on.
+2017-07-07 16:31:41,939 [__main__] DEBUG:	Temperature reached.
+2017-07-07 16:31:41,939 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:31:46,940 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:46,940 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:31:51,942 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:51,942 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:31:51,942 [__main__] DEBUG:	Done sampling.
+2017-07-07 16:31:51,942 [__main__] DEBUG:	Checking remaining temp and valve queues.
+2017-07-07 16:31:51,942 [__main__] DEBUG:	Valve queue still exists.
+2017-07-07 16:31:56,945 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:31:56,945 [__main__] DEBUG:	Ready for pressure change.
+2017-07-07 16:31:57,946 [__main__] DEBUG:	Output from Valve Controller cmd: 'Position is  = 1\r'
+2017-07-07 16:31:58,948 [__main__] DEBUG:	Output from Valve Controller cmd: ''
+2017-07-07 16:31:58,948 [__main__] DEBUG:	Setting current valve to: 2
+2017-07-07 16:32:00,553 [__main__] DEBUG:	Output from Calibration Board Controller cmd: '389, 408, 397\r\n'
+2017-07-07 16:32:00,553 [__main__] INFO:	Pressure is: [389, 408, 397]
+2017-07-07 16:32:00,553 [__main__] DEBUG:	Ready for temp change.
+2017-07-07 16:32:01,554 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:32:01,554 [__main__] DEBUG:	Setting goal temp to: 20.1
+2017-07-07 16:32:02,556 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:32:02,556 [__main__] INFO:	Bath Controller: Turned ON
+2017-07-07 16:32:02,556 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:03,557 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.234\r\n'
+2017-07-07 16:32:03,557 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.234
+2017-07-07 16:32:08,559 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:08,560 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:09,560 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.220\r\n'
+2017-07-07 16:32:09,560 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.22
+2017-07-07 16:32:14,562 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:14,562 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:15,562 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.151\r\n'
+2017-07-07 16:32:15,563 [__main__] INFO:	Waiting for temperature to reach 20.1.	 Current temp is: 20.151
+2017-07-07 16:32:20,565 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:20,565 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:21,567 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.105\r\n'
+2017-07-07 16:32:21,567 [__main__] INFO:	Temperature reached. Carry on.
+2017-07-07 16:32:21,567 [__main__] DEBUG:	Temperature reached.
+2017-07-07 16:32:21,567 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:32:26,569 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:26,569 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:32:31,571 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:31,571 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:32:31,571 [__main__] DEBUG:	Done sampling.
+2017-07-07 16:32:31,572 [__main__] DEBUG:	Checking remaining temp and valve queues.
+2017-07-07 16:32:31,572 [__main__] DEBUG:	Temp queue still exists.
+2017-07-07 16:32:36,574 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:36,574 [__main__] DEBUG:	Ready for temp change.
+2017-07-07 16:32:37,576 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:32:37,576 [__main__] DEBUG:	Setting goal temp to: 20.2
+2017-07-07 16:32:38,577 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
+2017-07-07 16:32:38,577 [__main__] INFO:	Bath Controller: Turned ON
+2017-07-07 16:32:38,577 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:39,579 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.120\r\n'
+2017-07-07 16:32:39,579 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.12
+2017-07-07 16:32:44,581 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:44,581 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:45,582 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.139\r\n'
+2017-07-07 16:32:45,582 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.139
+2017-07-07 16:32:50,585 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:50,585 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:51,586 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.128\r\n'
+2017-07-07 16:32:51,587 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.128
+2017-07-07 16:32:56,588 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:32:56,588 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:32:57,590 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.139\r\n'
+2017-07-07 16:32:57,590 [__main__] INFO:	Waiting for temperature to reach 20.2.	 Current temp is: 20.139
+2017-07-07 16:33:02,592 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:33:02,592 [__main__] DEBUG:	Waiting for temp equilibration.
+2017-07-07 16:33:03,593 [__main__] DEBUG:	Output from Bath Controller cmd: 'T1 +20.165\r\n'
+2017-07-07 16:33:03,593 [__main__] INFO:	Temperature reached. Carry on.
+2017-07-07 16:33:03,593 [__main__] DEBUG:	Temperature reached.
+2017-07-07 16:33:03,593 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:33:08,595 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:33:08,596 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:33:13,598 [__main__] DEBUG:	Calibration ongoing.
+2017-07-07 16:33:13,598 [__main__] DEBUG:	Waiting for sample.
+2017-07-07 16:33:13,598 [__main__] DEBUG:	Done sampling.
+2017-07-07 16:33:13,598 [__main__] DEBUG:	Checking remaining temp and valve queues.
+2017-07-07 16:33:13,599 [__main__] INFO:	Calibration complete!
+2017-07-07 16:33:13,599 [__main__] INFO:	Approx calibration time was: 394
+2017-07-07 16:33:28,565 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-07 16:33:28,570 [__main__] INFO:	Starting Bath Controller.
+2017-07-07 16:33:28,570 [__main__] DEBUG:	Connected over serial at /dev/tty.usbserial-A800dars
+2017-07-07 16:33:29,572 [__main__] DEBUG:	Output from Bath Controller cmd: '$\r\n'
