@@ -254,6 +254,17 @@ class CalBoard_Controller(Controller_Parent):
 			return True
 		return False
 
+	def refill_fr(self):
+		self.state_two() 	# state two for filling the fluid reservoir
+		time.sleep(1)		# allow time to change valves
+		self.flush_on() 	# begin filling fluid reservoir
+
+	def stop_refill(self):
+		self.flush_off()	# turn off pump
+		time.sleep(1)
+		self.state_one()	# change back to standard ISMS calibration operation state
+		time.sleep(1)		# allow time to change valves
+
 	def read_press(self):
 		#Command to get the pressure values, three values of the form "num, num, num" returned as a list of ints
 		pressures = self.cmd_controller("press")
@@ -311,6 +322,8 @@ class Application(tk.Frame):
 		self.paused 				= False
 		self.currently_sampling 	= tk.BooleanVar()
 		self.currently_sampling 	= False
+		self.refilling_fr 			= tk.BooleanVar()
+		self.refilling_fr 			= False
 		self.system_healthy 		= tk.BooleanVar()
 		self.system_healthy 		= False
 		self.safe_to_kill 			= tk.BooleanVar()
@@ -334,14 +347,14 @@ class Application(tk.Frame):
 		ttk.Label(self, text="Manual Commands").grid(column=5, row=1)
 		ttk.Label(self, textvariable=self.manual_state).grid(column=5, row=3, columnspan=1)
 
-		ttk.Label(self, text="STATUS:").grid(column=1, row=8)
-		ttk.Label(self, textvariable=self.status).grid(column=2, row=8, columnspan=3)
+		ttk.Label(self, text="STATUS:").grid(column=2, row=8)
+		ttk.Label(self, textvariable=self.status).grid(column=3, row=8, columnspan=2)
 
-		ttk.Label(self, text="Details:").grid(column=1, row=9)
-		ttk.Label(self, textvariable=self.details).grid(column=2, row=9, columnspan=3)
+		ttk.Label(self, text="Details:").grid(column=2, row=9)
+		ttk.Label(self, textvariable=self.details).grid(column=3, row=9, columnspan=2)
 
-		ttk.Label(self, text="Errors:").grid(column=1, row=10)
-		ttk.Label(self, textvariable=self.errors).grid(column=2, row=10, columnspan=3)
+		ttk.Label(self, text="Errors:").grid(column=2, row=10)
+		ttk.Label(self, textvariable=self.errors).grid(column=3, row=10, columnspan=2)
 
 		ttk.Label(self, text="current valve").grid(column=3, row=2)
 		ttk.Label(self, textvariable=self.current_valve).grid(column=2, row=2)
@@ -355,6 +368,9 @@ class Application(tk.Frame):
 		ttk.Label(self, textvariable=self.goal_temp).grid(column=2, row=4)
 
 		ttk.Button(self, text='Quit', command= lambda: self.kill()).grid(column=6, row=10)
+
+		ttk.Button(self, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=1, row=8)
+		ttk.Button(self, text='Stop Refilling', command= lambda: self.stop_refill()).grid(column=1, row=9)
 
 		ttk.Entry(self, width=7, textvariable=self.set_valve).grid(column=5, row=4)
 		ttk.Button(self, text="Set Valve", command=self.manual_set_valve).grid(column=6, row=4)
@@ -412,6 +428,16 @@ class Application(tk.Frame):
 
 	def sample_complete(self):
 		self.currently_sampling = False
+
+	def start_refill(self):
+		self.refilling_fr = True
+		cc = CalBoard_Controller()
+		cc.refill_fr()
+
+	def stop_refill(self):
+		cc = CalBoard_Controller()
+		cc.stop_refill()
+		self.refilling_fr = False
 
 	def calibrate(self):
 		if self.system_healthy:
@@ -561,7 +587,6 @@ def system_health_check(app):
 		logger.error(err_msg)
 		return(False)
 
-
 	# MFCs controller
 
 	# RGA controller
@@ -614,13 +639,6 @@ def calibrate_master(app):
 
 	"""
 
-	cc.state_two() # state to for filling the fluid reservoir
-	time.sleep(1)
-	cc.flush_on() # begin filling fluid reservoir
-	time.sleep(1)
-	cc.flush_off() # stop filling FR
-	time.sleep(2)
-
 	cc.state_one() # put the calibration board into normal calibration operation state
 
 	# turning on the HPLC TODO need to decide what this pressure limit is
@@ -644,6 +662,7 @@ def calibrate_master(app):
 	waiting_for_temp 		= False	# this is set true when waiting for temp
 	waiting_for_sample		= False	# this is set true after temp reached and before sampling is done
 	app.currently_sampling 	= False # this is a temp solution until the real Sampling Controller is designed
+	app.refilling_fr		= False # flag that is changed to True when FR refill button is pushed	
 
 	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
 
@@ -682,8 +701,11 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 		if waiting_for_sample:
 			logger.debug("Waiting for sample.")
 			app.details.set("Waiting for sample.")
+			if app.refilling_fr:
+				logger.info("Refilling FR.")
+				app.details.set("Refilling FR.")
 			if not app.currently_sampling:
-				logger.debug("Done sampling.")
+				logger.info("Done sampling.")
 				app.details.set("Done sampling.")
 				waiting_for_sample = False 
 			if not waiting_for_sample:
