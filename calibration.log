@@ -797,3 +797,9 @@
 2017-07-11 15:44:50,349 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-AE01I93I: [Errno 2] No such file or directory: '/dev/tty.usbserial-AE01I93I'")
 2017-07-11 15:44:50,349 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbmodem1411: [Errno 2] No such file or directory: '/dev/tty.usbmodem1411'")
 2017-07-11 15:44:50,349 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty???: [Errno 2] No such file or directory: '/dev/tty???'")
+2017-07-17 15:20:17,056 [__main__] INFO:	Firing up the GUI window.
+2017-07-17 15:46:34,362 [__main__] INFO:	Running through kill application safety procedures.
+
+
+2017-07-17 15:46:34,366 [__main__] ERROR:	SerialException occured. Arguments:(2, "could not open port /dev/tty.usbserial-A800dars: [Errno 2] No such file or directory: '/dev/tty.usbserial-A800dars'")
+2017-07-17 15:46:34,366 [__main__] WARNING:	Not able to kill bath.

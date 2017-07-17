@@ -30,8 +30,11 @@ logger.setLevel(logging.DEBUG)
 
 # [bath, valve controller, hplc controller, ]
 serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14131']
+# TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
+# abstract class that controller's inherit from. these are the object oriented code to command and
+	# communicate with all serial devices
 class Controller_Parent(object):
 	def __init__(self):
 		pass
@@ -48,9 +51,12 @@ class Controller_Parent(object):
 	def kill(self):
 		pass
 
-
+# temperature bath controller
+# this controller is more thorougly commented to clarify the setup of the controllers, repeated code in 
+	# following controllers is not commented
 class Bath_Controller(Controller_Parent):
 	def __init__(self, app):
+		# establish serial control with serial device
 		self.ser = serial.Serial(serial_list[0], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 		self.set_temp = None
 		self.app = app
@@ -60,7 +66,8 @@ class Bath_Controller(Controller_Parent):
 
 
 	def is_healthy(self):
-		# this command stops the controller so only use upon startup
+		# this command stops the bath so only use upon startup, it is used because it give a consistent
+			# reply to ensure communication has been established
 		if (self.cmd_controller("W RR -1") == "$\r\n"):
 			#self.continuous_update() # Bath is healthy to get it updating temp readout
 			return(True)
@@ -71,7 +78,7 @@ class Bath_Controller(Controller_Parent):
 		self.app.update_temp(self.read_temp())
 		self.app.after(5000, lambda: self.continuous_update())
 
-
+	# this tells the bath to turn on and will attempt to heat or cool to current setpoint
 	def turn_on(self):
 		if(self.cmd_controller("W GO 1") == "$\r\n"):
 			logger.info("Bath Controller: Turned ON")
@@ -79,16 +86,20 @@ class Bath_Controller(Controller_Parent):
 		else:
 			return(False)
 
-	def kill(self):
+	# stops bath operation
+	def stop(self):
 		self.cmd_controller("W RR -1")
 
+	# this is the command logic which is used internally by this class and is specific to all controllers
 	def cmd_controller(self, cmd):
 		self.ser.write(b"" + cmd + "\r\n")
 		ser_rsp = self.ser.read(100)
 		logger.debug("Output from Bath Controller cmd: " + repr(ser_rsp))
 		if (ser_rsp == "F001\r\n"):
 			logger.error("Error from Bath Controller: " + repr(ser_rsp))
+			# all cmd_controllers issue a "bad cmd" response for consistency
 			return("bad cmd")
+		# if the cmd was good then return whatever the device returned
 		else:
 			return(ser_rsp)
 
@@ -114,6 +125,7 @@ class Bath_Controller(Controller_Parent):
 
 	def check_temp(self):
 		current_temp = self.read_temp()
+		# checking if temp is within .05 degrees of setpoint and if so reporting back True
 		if (current_temp < self.set_temp + .05) and (current_temp > self.set_temp - .05):
 			logger.info("Temperature reached. Carry on.")
 			return(True)
@@ -121,6 +133,7 @@ class Bath_Controller(Controller_Parent):
 			logger.info("Waiting for temperature to reach " + str(self.set_temp) + ".\t Current temp is: " + str(current_temp))
 			return(False)
 
+# controller for the Valco 6 Port Multiposition Valve Controller
 class Valve_Controller(Controller_Parent):
 	def __init__(self, app):
 		self.ser = serial.Serial(serial_list[1], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
@@ -129,6 +142,7 @@ class Valve_Controller(Controller_Parent):
 		self.app = app
 
 	def is_healthy(self):
+		# asking for the part number and date of firmware to ensure device is communcating
 		if (self.cmd_controller("VR") == "I-PD-AMHX88RD1\r01/03/2008\r"):
 			return(True)
 		else:
@@ -145,8 +159,10 @@ class Valve_Controller(Controller_Parent):
 			return(ser_rsp)
 
 	def turn_on(self):
+		# device is on upon power-up
 		return(True)
 
+	# set the valve position from 1 to 6
 	def set_valve(self, valve_number):
 		if (valve_number > 0 and valve_number < 7):
 			current_position_response = self.cmd_controller("CP")
@@ -162,14 +178,16 @@ class Valve_Controller(Controller_Parent):
 					return(True)
 		return(False)
 
-#TODO need to look into fault clearing after overpressure
+# controller for the HPLC pump
 class Pump_Controller(Controller_Parent):
+	#TODO need to look into fault clearing after overpressure
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[2], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 		logger.info("Starting HPLC Pump Controller")
 		logger.debug("Connected over serial at " + str(self.ser.name))
 
 	def is_healthy(self):
+		# asking for pump type and firmware revision
 		if (self.cmd_controller("ID") == "OK,v1.03 161794 firmware/"):
 			return(True)
 		else:
@@ -186,10 +204,18 @@ class Pump_Controller(Controller_Parent):
 			return(ser_rsp)
 
 	def turn_on(self):
+		# set the pump to run state
 		if(self.cmd_controller("RU") == "OK/"):
 			return(True)
 		else:
 			return(False)
+
+	def stop_pump(self):
+		# sets the pump to stop state
+		if(self.cmd_controller("ST") == "OK/"):
+			return(True)
+		else:
+			return(False)		
 	
 	def set_pressure_limit(self, limit):
 		if(self.cmd_controller("UP" + str(limit)) == "OK/"):
@@ -197,7 +223,15 @@ class Pump_Controller(Controller_Parent):
 		else:
 			return(False)
 
+	def reset_pump(self):
+		# resets the pump config to its default power-up state
+		#TODO need to test if this clears and overpressure fault
+		if(self.cmd_controller("RE") == "OK/"):
+			return(True)
+		else:
+			return(False)		
 
+# controller for the arduino that controls the circuit board that controls the calibration board
 class CalBoard_Controller(Controller_Parent):
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[3], 9600, timeout=3)
@@ -224,6 +258,7 @@ class CalBoard_Controller(Controller_Parent):
 	def turn_on(self):
 		pass
 
+	# these commands change the state of the solenoid valves on the calibration board
 	def state_one(self):
 		# Normal operation while running the mass spec
 		if self.cmd_controller("valves 1") == "valves 1\r\n":
@@ -243,6 +278,7 @@ class CalBoard_Controller(Controller_Parent):
 			return True
 		return False
 
+	# these two commands turn on and off the flush pump on the calibration board
 	def flush_on(self):
 		# Ensure that we're in state 2 before doing this
 		if (self.cmd_controller("flushOn") == "flushOn"):
@@ -261,16 +297,17 @@ class CalBoard_Controller(Controller_Parent):
 
 	def stop_refill(self):
 		self.flush_off()	# turn off pump
-		time.sleep(1)
+		time.sleep(2)		# allow time for pressure to die down from flush pump
 		self.state_one()	# change back to standard ISMS calibration operation state
 		time.sleep(1)		# allow time to change valves
 
 	def read_press(self):
-		#Command to get the pressure values, three values of the form "num, num, num" returned as a list of ints
+		#Command to get the pressure values
+		# three values of the form "num, num, num" returned as a list of ints
 		pressures = self.cmd_controller("press")
 		return map(int, pressures.split(", "))
 
-
+# not currently in use, just a skeleton controller for commanding the future sampling setup
 class Sampling_Controller(Controller_Parent):
 	def __init__(self):
 		#self.ser = serial.Serial(serial_list[3], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
@@ -278,7 +315,6 @@ class Sampling_Controller(Controller_Parent):
 		#print("Connected over serial at " + str(self.ser.name))
 
 	def is_healthy(self):
-		#if (self.cmd_controller("ID") == "OK,v1.03 161794 firmware/"):
 		if (True):
 			return(True)
 		else:
@@ -297,15 +333,13 @@ class Sampling_Controller(Controller_Parent):
 			return(True)
 
 
-### Main Tkinter Application
+### Main Tkinter Application ###
 
+# this is the actual GUI code that is execute in the main() function and creates the GUI
 class Application(tk.Frame):
 	def __init__(self, master=None):
 		tk.Frame.__init__(self, master)
 		self.grid()
-		#self.configure(background='light grey')
-		#s = ttk.Style()
-		#s.configure('.', background='black', foreground='black')
 		logger.info("Firing up the GUI window.")
 		self.master.title('Girguis ISMS Calibration')
 		
@@ -341,8 +375,6 @@ class Application(tk.Frame):
 		self.createWidgets()
 
 	def createWidgets(self):
-		#s = ttk.Style()
-		#s.configure('.', background='black')
 
 		ttk.Label(self, text="Manual Commands").grid(column=5, row=1)
 		ttk.Label(self, textvariable=self.manual_state).grid(column=5, row=3, columnspan=1)
@@ -401,14 +433,17 @@ class Application(tk.Frame):
 
 			try:
 				bc = Bath_Controller(self)
-				bc.kill()
+				bc.stop()
 				# also need to kill the pump
+				pc = Pump_Controller(self)
+				pc.stop()
+
 				self.safe_to_kill = True
 				self.quit()
 			except Exception as e:
 				template = str(type(e).__name__) + " occured. Arguments:" + str(e.args)
 				logger.error(template)
-				logger.warn("Not able to kill bath.")
+				logger.warn("Not able to kill one or more serial devices.")
 				self.quit()
 			
 
