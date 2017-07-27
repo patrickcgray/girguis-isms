@@ -10,7 +10,7 @@ int v7 = 43;
 int v8 = 45;
 int v9 = 47;
 
-int flushPin = 49;
+int flushPin = 52;
 
 int press1 = A8;
 int press2 = A9;
@@ -31,6 +31,7 @@ void setup() {
   pinMode(v7, OUTPUT);
   pinMode(v8, OUTPUT);
   pinMode(v9, OUTPUT);
+  pinMode(flushPin, OUTPUT);
   //make all solenoid valves closed
   digitalWrite(v1, LOW);
   digitalWrite(v2, LOW);
@@ -41,6 +42,7 @@ void setup() {
   digitalWrite(v7, LOW);
   digitalWrite(v8, LOW);
   digitalWrite(v9, LOW);
+  digitalWrite(flushPin, LOW);
   // run through any necessary health checks
   //?
   
@@ -74,8 +76,9 @@ void loop() {
       // Filling an empty reservoir
       
       digitalWrite(LED_BUILTIN, HIGH);
-      digitalWrite(v1, HIGH); // v1 and v2 change depending on what you're filling with
-      digitalWrite(v2, LOW);
+      // v1 and v2 change depending on what you're filling with
+      digitalWrite(v1, LOW); // DI Water
+      digitalWrite(v2, HIGH); // Seawater
       digitalWrite(v3, LOW);
       digitalWrite(v4, LOW);
       digitalWrite(v5, LOW);

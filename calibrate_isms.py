@@ -14,8 +14,7 @@ from collections import deque
 import logging
 import math
 
-### Logging Config ###
-
+### Logging Configuration (using default python logging module)
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('calibration.log')
 handler2 = logging.StreamHandler()
@@ -28,8 +27,8 @@ logger.setLevel(logging.DEBUG)
 
 ### Serial Device Controllers ###
 
-# [bath, valve controller, hplc controller, ]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14131']
+# [bath controller, valve controller, hplc controller, calboard controller, mfc controller]
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111']
 # TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
@@ -188,7 +187,7 @@ class Pump_Controller(Controller_Parent):
 
 	def is_healthy(self):
 		# asking for pump type and firmware revision
-		if (self.cmd_controller("ID") == "OK,v1.03 161794 firmware/"):
+		if (self.cmd_controller("ID") == "OK, 195016 Version 2.0.9/"):
 			return(True)
 		else:
 			return(False)
@@ -215,7 +214,7 @@ class Pump_Controller(Controller_Parent):
 		if(self.cmd_controller("ST") == "OK/"):
 			return(True)
 		else:
-			return(False)		
+			return(False)       
 	
 	def set_pressure_limit(self, limit):
 		if(self.cmd_controller("UP" + str(limit)) == "OK/"):
@@ -223,13 +222,11 @@ class Pump_Controller(Controller_Parent):
 		else:
 			return(False)
 
-	def reset_pump(self):
-		# resets the pump config to its default power-up state
-		#TODO need to test if this clears and overpressure fault
-		if(self.cmd_controller("RE") == "OK/"):
+	def clear_faults(self):
+		if(self.cmd_controller("CF") == "OK/"):
 			return(True)
 		else:
-			return(False)		
+			return(False)       
 
 # controller for the arduino that controls the circuit board that controls the calibration board
 class CalBoard_Controller(Controller_Parent):
@@ -273,7 +270,7 @@ class CalBoard_Controller(Controller_Parent):
 
 	def state_three(self):
 		# Emptying the fluid reservoir
-    	# Fluid is pushed out of reservoir by gas
+		# Fluid is pushed out of reservoir by gas
 		if self.cmd_controller("valves 3") == "valves 3\r\n":
 			return True
 		return False
@@ -291,21 +288,110 @@ class CalBoard_Controller(Controller_Parent):
 		return False
 
 	def refill_fr(self):
-		self.state_two() 	# state two for filling the fluid reservoir
-		time.sleep(1)		# allow time to change valves
-		self.flush_on() 	# begin filling fluid reservoir
+		self.state_two()    # state two for filling the fluid reservoir
+		time.sleep(1)       # allow time to change valves
+		self.flush_on()     # begin filling fluid reservoir
 
 	def stop_refill(self):
-		self.flush_off()	# turn off pump
-		time.sleep(2)		# allow time for pressure to die down from flush pump
-		self.state_one()	# change back to standard ISMS calibration operation state
-		time.sleep(1)		# allow time to change valves
+		self.flush_off()    # turn off pump
+		time.sleep(2)       # allow time for pressure to die down from flush pump
+		self.state_one()    # change back to standard ISMS calibration operation state
+		time.sleep(1)       # allow time to change valves
 
 	def read_press(self):
 		#Command to get the pressure values
 		# three values of the form "num, num, num" returned as a list of ints
 		pressures = self.cmd_controller("press")
 		return map(int, pressures.split(", "))
+
+
+class MFC_Controller_Parent(Controller_Parent):
+	def __init__(self):
+		self.serial_num = None
+
+	def is_healthy(self):
+		if (self.cmd_controller("?Srnm") == self.serial_num):
+			return(True)
+		else:
+			return(False)
+
+	def read_streaming_state(self):
+		self.cmd_controller('?Strm')
+
+	def set_streaming_state(self, mode):
+		self.cmd_controller('!Strm' + mode)
+
+	def read_flow(self):
+		self.cmd_controller("?Flow")
+
+	def read_gas(self):
+		self.cmd_controller('?Gasi')
+
+	def set_gas(self, gas_index):
+		# gasIndex value is 1 through 10
+		"""
+		1 - Air 
+		2 - Argon
+		3 - CO2
+		4 - CO
+		5 - He
+		6 - H
+		7 - CH4
+		8 - N
+		9 - NO
+		10 - O
+		"""
+		rsp = "Gasi" + str(gas_index) 
+		rsp = rsp + calcCRC(rsp) + '\x0d'
+		if (self.cmd_controller("!Gasi" + str(gas_index)) == rsp):
+			return(True)
+		else:
+			return(False)
+
+	def set_setpoint(self, setpoint):
+		rsp = "Sinv" + ('%.3f' % setpoint)
+		rsp = rsp + calcCRC(rsp) + '\x0d'
+		if (self.cmd_controller("!Sinv" + ('%.3f' % setpoint)) == rsp):
+			return(True)
+		else:
+			return(False)
+
+	def cmd_controller(self, cmd):
+		crc = calcCRC(cmd)
+		cmd = cmd + (crc) + '\x0d'
+		self.ser.write(cmd)
+		ser_rsp = self.ser.read(200)
+		logger.debug("Output from MFC Controller cmd with repr(): " + repr(ser_rsp))
+		logger.debug("Output from MFC Controller cmd *without* repr(): " + ser_rsp)
+		return(ser_rsp)
+
+	def turn_on(self):
+		self.set_streaming("Echo")
+		pass
+
+# mass flow controller one
+# this is typically the Nitrogen MFC
+class MFC_Controller_One(MFC_Controller_Parent):
+	def __init__(self, app):
+		# The serial_list index and serial number will change depending on device
+		self.ser = serial.Serial(serial_list[4], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
+		time.sleep(1)
+		logger.info("Starting MFC Controller One (Nitrogen)")
+		logger.debug("Connected over serial at " + str(self.ser.name))
+		self.serial_num = 'Srnm1380145\x93\r'
+		self.turn_on()
+
+# mass flow controller two
+# this is typically the calibration gas MFC
+class MFC_Controller_Two(MFC_Controller_Parent):
+	def __init__(self, app):
+		self.ser = serial.Serial(serial_list[5], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
+		time.sleep(1)
+		logger.info("Starting MFC Controller Two (Calibration Gas)")
+		logger.debug("Connected over serial at " + str(self.ser.name))
+		self.turn_on()
+
+		# Will need to look at app.current_gas in order to appropriately set the gas index on the MFC
 
 # not currently in use, just a skeleton controller for commanding the future sampling setup
 class Sampling_Controller(Controller_Parent):
@@ -335,7 +421,7 @@ class Sampling_Controller(Controller_Parent):
 
 ### Main Tkinter Application ###
 
-# this is the actual GUI code that is execute in the main() function and creates the GUI
+# this is the actual GUI code that is executed in the main() function to create the GUI
 class Application(tk.Frame):
 	def __init__(self, master=None):
 		tk.Frame.__init__(self, master)
@@ -344,36 +430,37 @@ class Application(tk.Frame):
 		self.master.title('Girguis ISMS Calibration')
 		
 		# creating all application variables
-		self.status 				= tk.StringVar()
+		self.status                 = tk.StringVar()
 		self.status.set("Awaiting instruction.")
-		self.details 				= tk.StringVar()
+		self.details                = tk.StringVar()
 		self.details.set("Please initiate a command.")
-		self.errors 				= tk.StringVar()
+		self.errors                 = tk.StringVar()
 		self.errors.set("No errors yet detected.")
-		self.calibrating			= tk.BooleanVar()
-		self.calibrating			= False
-		self.paused 				= tk.BooleanVar()
-		self.paused 				= False
-		self.currently_sampling 	= tk.BooleanVar()
-		self.currently_sampling 	= False
-		self.refilling_fr 			= tk.BooleanVar()
-		self.refilling_fr 			= False
-		self.system_healthy 		= tk.BooleanVar()
-		self.system_healthy 		= False
-		self.safe_to_kill 			= tk.BooleanVar()
-		self.safe_to_kill 			= False
-		self.manual_state 			= tk.StringVar()
+		self.calibrating            = tk.BooleanVar()
+		self.calibrating            = False
+		self.paused                 = tk.BooleanVar()
+		self.paused                 = False
+		self.currently_sampling     = tk.BooleanVar()
+		self.currently_sampling     = False
+		self.refilling_fr           = tk.BooleanVar()
+		self.refilling_fr           = False
+		self.system_healthy         = tk.BooleanVar()
+		self.system_healthy         = False
+		self.safe_to_kill           = tk.BooleanVar()
+		self.safe_to_kill           = False
+		self.manual_state           = tk.StringVar()
 		self.manual_state.set("Manual Disengaged.")
-		self.current_valve 			= tk.IntVar()
-		self.time_string 			= tk.IntVar()
-		self.temp_readout 			= tk.DoubleVar()
-		self.goal_temp	 			= tk.DoubleVar()
-		self.set_valve 				= tk.IntVar()
-		self.set_temp 				= tk.DoubleVar()
-		self.in_manual 				= False
+		self.current_valve          = tk.IntVar()
+		self.time_string            = tk.IntVar()
+		self.temp_readout           = tk.DoubleVar()
+		self.goal_temp              = tk.DoubleVar()
+		self.set_valve              = tk.IntVar()
+		self.set_temp               = tk.DoubleVar()
+		self.in_manual              = False
 
 		self.createWidgets()
 
+	# this fcn defines and creates all the visual components of the GUI
 	def createWidgets(self):
 
 		ttk.Label(self, text="Manual Commands").grid(column=5, row=1)
@@ -420,6 +507,13 @@ class Application(tk.Frame):
 		ttk.Button(self, text="Engage Manual", command=self.engage_manual).grid(column=5, row=2)
 		ttk.Button(self, text="Disengage Manual", command=self.disengage_manual).grid(column=6, row=2)
 
+
+		ttk.Label(self, text="Choose a gas").grid(column = 5, row = 6)
+		gas_options = ["Carbon Dioxide","Hydrogen","Oxygen","Methane","Sulfide"]
+		self.current_gas = tk.StringVar()
+		ttk.OptionMenu(self, self.current_gas, gas_options[0], *gas_options, command=self.gas_selected).grid(column=5,row=7)
+
+		
 		# create padding for all items
 		for child in self.winfo_children(): 
 			child.grid_configure(padx=5, pady=5)
@@ -550,15 +644,19 @@ class Application(tk.Frame):
 				self.errors.set(err_msg)
 				logger.warn(err_msg)
 
+	# triggered on change in gas drop down
+	def gas_selected(self, value):
+		print(value)
+
 
 ### Utility Functions
 
 def check_serial():
 	for index, serial_port in enumerate(serial_list):
 		try:
-			ser = serial.Serial(serial_port)	  	# open serial port
-			serial_check_list[index] = ser.name 	# check which port was really used
-			ser.close()             				# close port
+			ser = serial.Serial(serial_port)        # open serial port
+			serial_check_list[index] = ser.name     # check which port was really used
+			ser.close()                             # close port
 			logger.debug("Acquired serial connection.")
 		except Exception as e:
 			template = str(type(e).__name__) + " occured. Arguments:" + str(e.args)
@@ -628,9 +726,7 @@ def system_health_check(app):
 
 	# turbo pump controller
 
-	# gc controller
-
-	# fraction collector controller
+	# GC controller
 
 	app.details.set("Precheck complete! System healthy.")
 	logger.debug("Precheck complete! System healthy.")
@@ -639,7 +735,7 @@ def system_health_check(app):
 
 ### END Utility Functions
 
-
+# this is the main calibration function that is called and sets the system into its startup state
 def calibrate_master(app):
 	app.status.set("Calibration initiated.")
 	logger.info("Calibration initiated.")
@@ -683,24 +779,26 @@ def calibrate_master(app):
 	# turning on the MFCs
 
 	# operational values for queues
-	#valve_queue 	= deque([1, 2, 3, 4, 5, 6])
-	#temp_queue 		= deque([6, 4, 2])
+	#valve_queue    = deque([1, 2, 3, 4, 5, 6])
+	#temp_queue         = deque([6, 4, 2])
 
 	# testing values for queues
-	valve_queue 	= deque([1, 2])
-	temp_queue 		= deque([20.1, 20.2])
+	valve_queue     = deque([1, 2])
+	temp_queue      = deque([20.1, 20.2])
 
 
 	# Boolean flags to inform calibrate_slave() about its proper state
-	ready_for_pres_change 	= True 	# this starts True, and is reset True after last temp and sampling
-	ready_for_temp_change	= False # this is set after pres change and after sampling
-	waiting_for_temp 		= False	# this is set true when waiting for temp
-	waiting_for_sample		= False	# this is set true after temp reached and before sampling is done
-	app.currently_sampling 	= False # this is a temp solution until the real Sampling Controller is designed
-	app.refilling_fr		= False # flag that is changed to True when FR refill button is pushed	
+	ready_for_pres_change   = True  # this starts True, and is reset True after last temp and sampling
+	ready_for_temp_change   = False # this is set after pres change and after sampling
+	waiting_for_temp        = False # this is set true when waiting for temp
+	waiting_for_sample      = False # this is set true after temp reached and before sampling is done
+	app.currently_sampling  = False # this is a temp solution until the real Sampling Controller is designed
+	app.refilling_fr        = False # flag that is changed to True when FR refill button is pushed  
 
 	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
 
+# calibration slave function that is repeatedly called after 5 seconds everytime it complete
+	# this delay allows the GUI to remain functional
 def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
 	
 	# TODO need to think about what happens when a user assumes manual control and changes temp and pressure
@@ -768,4 +866,4 @@ def main():
 	app.mainloop()    
 
 if __name__ == '__main__':
-    main()
+	main()
