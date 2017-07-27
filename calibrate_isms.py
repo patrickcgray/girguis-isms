@@ -16,7 +16,8 @@ import math
 
 ### Logging Configuration (using default python logging module)
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler('calibration.log')
+showtime = time.strftime("%Y_%m_%d-%H_%M_%S", time.gmtime())
+handler = logging.FileHandler('_calibration_' + showtime + '.log')
 handler2 = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s:\t%(message)s')
 handler.setFormatter(formatter)
@@ -205,6 +206,12 @@ class Pump_Controller(Controller_Parent):
 	def turn_on(self):
 		# set the pump to run state
 		if(self.cmd_controller("RU") == "OK/"):
+			return(True)
+		else:
+			return(False)
+
+	def set_flow_rate(flow_rate):
+		if (self.cmd_controller("FI" + str(flow_rate)) == "OK/"):
 			return(True)
 		else:
 			return(False)
@@ -457,6 +464,8 @@ class Application(tk.Frame):
 		self.set_valve              = tk.IntVar()
 		self.set_temp               = tk.DoubleVar()
 		self.in_manual              = False
+		self.gas_index				= tk.IntVar()
+		self.gas_index				= -1
 
 		self.createWidgets()
 
@@ -646,8 +655,31 @@ class Application(tk.Frame):
 
 	# triggered on change in gas drop down
 	def gas_selected(self, value):
-		print(value)
-
+		# gasIndex value is 1 through 10
+		"""
+		1 - Air 
+		2 - Argon
+		3 - CO2
+		4 - CO
+		5 - He
+		6 - H
+		7 - CH4
+		8 - N
+		9 - NO
+		10 - O
+		"""
+		if value == "Carbon Dioxide":
+			self.gas_index = 3
+		elif value == "Hydrogen":
+			self.gas_index = 6
+		elif value == "Oxygen":
+			self.gas_index = 10
+		elif value == "Methane":
+			self.gas_index = 7
+		elif value == "Sulfide":
+			self.gas_index = 1
+		else:
+			self.gas_index = 1
 
 ### Utility Functions
 
@@ -720,7 +752,28 @@ def system_health_check(app):
 		logger.error(err_msg)
 		return(False)
 
-	# MFCs controller
+	# MFCs controllers
+	mfc1 = MFC_Controller_One()
+	if (mfc1.is_healthy() == True):
+		# MFC controller is healthy and can continue
+		logger.debug("MFC Controller One is healthy, moving forward.\n\n")
+		return(True)
+	else:
+		# something is wrong and need to trip a pause and alarm and wait for user input
+		err_msg = "MFC One is unhealthy, stopping calibration.\n\n"
+		logger.error(err_msg)
+		return(False)
+
+	mfc2 = MFC_Controller_Two()
+	if (mfc2.is_healthy() == True):
+		# MFC controller is healthy and can continue
+		logger.debug("MFC Controller One is healthy, moving forward.\n\n")
+		return(True)
+	else:
+		# something is wrong and need to trip a pause and alarm and wait for user input
+		err_msg = "MFC One is unhealthy, stopping calibration.\n\n"
+		logger.error(err_msg)
+		return(False)
 
 	# RGA controller
 
@@ -747,6 +800,8 @@ def calibrate_master(app):
 	vc = Valve_Controller(app)
 	pc = Pump_Controller()
 	cc = CalBoard_Controller()
+	mfc1 = MFC_Controller_One()
+	mfc2 = MFC_Controller_Two()
 	#sc = Sampling_Controller()
 
 	time.sleep(2) # allow controller startup time
@@ -756,13 +811,11 @@ def calibrate_master(app):
 
 	"""
 
-	data collection is turned on
+	data collection is turned on for the mass spec
 
 	run through prechecks (manually call check_health by running prechecks)
 
 	manually check FR level and click to refill if needed
-
-	get solenoids into correct state
 
 	get the loops up to their operational pressure
 		HPLC turns on now
@@ -770,13 +823,23 @@ def calibrate_master(app):
 
 	"""
 
-	cc.state_one() # put the calibration board into normal calibration operation state
+	cc.state_one() 				# put the calibration board into normal calibration operation state
 
-	# turning on the HPLC TODO need to decide what this pressure limit is
-	#pc.turn_on()
-	#pc.set_pressure_limit(4000)
+	
+	vc.set_valve(1) 			#setting the valve to the zero pressure setting
+
+	# turning on the HPLC pump
+	pc.set_pressure_limit(6000) # 6000 psi
+	pc.set_flow_rate(2000)		# 20ml/min
+	pc.turn_on()				# setting to run state
 
 	# turning on the MFCs
+	mfc1.set_gas(8) 			#setting gas to Nitrogen
+	mfc2.set_gas(app.gas_selected) #setting gas to gas_selected
+
+	#TODO need to check what the setpoints here should be
+	mfc1.set_setpoint(20)
+	mfc2.set_setpoint(10)
 
 	# operational values for queues
 	#valve_queue    = deque([1, 2, 3, 4, 5, 6])
@@ -785,7 +848,6 @@ def calibrate_master(app):
 	# testing values for queues
 	valve_queue     = deque([1, 2])
 	temp_queue      = deque([20.1, 20.2])
-
 
 	# Boolean flags to inform calibrate_slave() about its proper state
 	ready_for_pres_change   = True  # this starts True, and is reset True after last temp and sampling
@@ -800,10 +862,6 @@ def calibrate_master(app):
 # calibration slave function that is repeatedly called after 5 seconds everytime it complete
 	# this delay allows the GUI to remain functional
 def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
-	
-	# TODO need to think about what happens when a user assumes manual control and changes temp and pressure
-		# will they actually do this during calibration?
-
 	# test this entirely
 
 	if app.paused:
@@ -816,18 +874,21 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			logger.debug("Ready for pressure change.")
 			# TODO do I need to check if the pressure is actually correct or just log it for data collection?
 			vc.set_valve(valve_queue.popleft())
+			# TODO for data log log press here
 			logger.info("Pressure is: " + str(cc.read_press()))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
 			logger.debug("Ready for temp change.")
 			bc.change_temp(temp_queue.popleft())
+			# TODO for data log log temp here
 			ready_for_temp_change = False
 			waiting_for_temp = True
 		if waiting_for_temp:
 			logger.debug("Waiting for temp equilibration.")
 			if(bc.check_temp()): # returns True if bath is at set_temp is met
 				logger.debug("Temperature reached.")
+				# TODO for data log log temp reached here
 				waiting_for_temp = False
 				waiting_for_sample = True
 				app.currently_sampling = True
@@ -840,6 +901,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			if not app.currently_sampling:
 				logger.info("Done sampling.")
 				app.details.set("Done sampling.")
+				# TODO for data log log sample taken here
 				waiting_for_sample = False 
 			if not waiting_for_sample:
 				logger.debug("Checking remaining temp and valve queues.")
@@ -852,6 +914,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 					ready_for_pres_change = True
 				else: # if there are not temps and no pressures left the calibration is complete
 					app.status.set("Calibration complete!")
+					# TODO for data log temp complete here
 					logger.info("Calibration complete!")
 					logger.info("Approx calibration time was: " + str(app.time_string.get()))
 					app.calibrating = False
