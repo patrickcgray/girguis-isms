@@ -27,7 +27,7 @@ logger.addHandler(handler2)
 logger.setLevel(logging.DEBUG)
 
 
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14111']
 serial_check_list = [None] * len(serial_list)
 
 def check_serial():

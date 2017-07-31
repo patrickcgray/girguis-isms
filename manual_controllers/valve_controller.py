@@ -1,8 +1,8 @@
 import serial
 
-ser = serial.Serial("/dev/tty.usbserial", 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
+ser = serial.Serial("/dev/tty.usbserial181", 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 print("writing out")
-ser.write(b"GO1\r\n")
+ser.write(b"CP\r\n")
 ser_rsp = ser.read(100)
 print(repr(ser_rsp))
 print(ser_rsp)

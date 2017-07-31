@@ -17,9 +17,8 @@ import binascii
 
 ### Logging Config ###
 showtime = time.strftime("%Y_%m_%d-%H_%M_%S", time.gmtime())
-print('calibration' + showtime + '.log')
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler('calibration' + showtime + '.log')
+handler = logging.FileHandler('_calibration' + showtime + '.log')
 handler2 = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s:\t%(message)s')
 handler.setFormatter(formatter)
@@ -57,7 +56,13 @@ class MFC_Controller_One():
 		self.turn_on()
 
 	def is_healthy(self):
-		if (self.cmd_controller("?Srnm") == 'Srnm1380145\x93\r'):
+		# for the new SmartTrak 100 MFC_2
+		#if (self.cmd_controller("?Srnm") == 'Srnm210704\x8c\x92\r'):
+		# max flow: Sinv200.400\xcd*\r
+
+		# for the old SmartTrak 2 MFC_1
+		if (self.cmd_controller("?Srnm") == 'Srnm138308\x9e~\r'):
+		# max flow Sinv560.399\xf7\xae\r
 			return(True)
 		else:
 			return(False)
@@ -67,9 +72,6 @@ class MFC_Controller_One():
 
 	def set_streaming_state(self, mode):
 		self.cmd_controller('!Strm' + mode)
-
-	def read_flow(self):
-		self.cmd_controller("?Flow")
 
 	def read_gas(self):
 		self.cmd_controller('?Gasi')
@@ -103,6 +105,9 @@ class MFC_Controller_One():
 		else:
 			return(False)
 
+	def read_flow(self):
+		self.cmd_controller("?Flow")
+
 	def cmd_controller(self, cmd):
 		crc = calcCRC(cmd)
 		cmd = cmd + (crc) + '\x0d'
@@ -113,7 +118,7 @@ class MFC_Controller_One():
 		return(ser_rsp)
 
 	def turn_on(self):
-		self.set_streaming("Echo")
+		#self.set_streaming_state("Echo")
 		pass
 
 def check_health():
@@ -130,11 +135,14 @@ def check_health():
 
 def run_cmds():
 	mc_1 = MFC_Controller_One()
-
-	if mc_1.set_setpoint(10) == True:
-		print('we done it!')
-
-if check_health():
-	run_cmds()
+	#if mc_1.is_healthy():
+		#print("We're healthy!!!")
+	#mc_1.set_gas(8)
+	#mc_1.read_gas()
+	#mc_1.set_setpoint(150)
+	mc_1.read_flow()
+	
+#if check_health():
+run_cmds()
 
 

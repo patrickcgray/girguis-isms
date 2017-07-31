@@ -107,6 +107,21 @@ void loop() {
       
       Serial.println("valves 3");
     }
+    else if (input == "valves 4") {
+      // Releasing pressure from the system
+      digitalWrite(LED_BUILTIN, LOW);
+      digitalWrite(v1, LOW);
+      digitalWrite(v2, LOW);
+      digitalWrite(v3, LOW);
+      digitalWrite(v4, LOW);
+      digitalWrite(v5, LOW);
+      digitalWrite(v6, LOW);
+      digitalWrite(v7, LOW);
+      digitalWrite(v8, HIGH);
+      digitalWrite(v9, LOW);
+      
+      Serial.println("valves 4");
+    }
     else if (input == "press") {
         String pressValues = "";
         int val1 = analogRead(press1);

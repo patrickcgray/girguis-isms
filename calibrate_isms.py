@@ -13,6 +13,7 @@ import time
 from collections import deque
 import logging
 import math
+from calcCRC import calcCRC
 
 ### Logging Configuration (using default python logging module)
 logger = logging.getLogger(__name__)
@@ -26,10 +27,17 @@ logger.addHandler(handler)
 logger.addHandler(handler2)
 logger.setLevel(logging.DEBUG)
 
+#logger for simple status information for data analysis
+data_logger = logging.getLogger(__name__ + 'data')
+data_handler = logging.FileHandler('data_calibration_' + showtime + '.log')
+data_handler.setFormatter(formatter)
+data_logger.addHandler(data_handler)
+data_logger.setLevel(logging.INFO)
+
 ### Serial Device Controllers ###
 
-# [bath controller, valve controller, hplc controller, calboard controller, mfc controller]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111']
+# [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial186', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial']
 # TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
@@ -63,20 +71,21 @@ class Bath_Controller(Controller_Parent):
 		logger.info("Starting Bath Controller.")
 		logger.debug("Connected over serial at " + str(self.ser.name))
 		
-
-
 	def is_healthy(self):
 		# this command stops the bath so only use upon startup, it is used because it give a consistent
 			# reply to ensure communication has been established
 		if (self.cmd_controller("W RR -1") == "$\r\n"):
-			#self.continuous_update() # Bath is healthy to get it updating temp readout
+			self.continuous_temp_update() # Bath is healthy so get it updating temp readout
 			return(True)
 		else:
 			return(False)
 
-	def continuous_update(self):
-		self.app.update_temp(self.read_temp())
-		self.app.after(5000, lambda: self.continuous_update())
+	def continuous_temp_update(self):
+		try:
+			self.app.update_temp(self.read_temp())
+		except:
+			return
+		self.app.after(5000, lambda: self.continuous_temp_update())
 
 	# this tells the bath to turn on and will attempt to heat or cool to current setpoint
 	def turn_on(self):
@@ -87,7 +96,7 @@ class Bath_Controller(Controller_Parent):
 			return(False)
 
 	# stops bath operation
-	def stop(self):
+	def stop_bath(self):
 		self.cmd_controller("W RR -1")
 
 	# this is the command logic which is used internally by this class and is specific to all controllers
@@ -150,6 +159,7 @@ class Valve_Controller(Controller_Parent):
 
 	def cmd_controller(self, cmd):
 		self.ser.write(b"" + cmd + "\r\n")
+		time.sleep(1)
 		ser_rsp = self.ser.read(100)
 		logger.debug("Output from Valve Controller cmd: " + repr(ser_rsp))
 		if ("Bad command" in ser_rsp):
@@ -196,7 +206,7 @@ class Pump_Controller(Controller_Parent):
 	def cmd_controller(self, cmd):
 		self.ser.write(b"" + cmd)
 		ser_rsp = self.ser.read(100)
-		logger.debug("Output from Bath Controller cmd: " + repr(ser_rsp))
+		logger.debug("Output from Pump Controller cmd: " + repr(ser_rsp))
 		if ser_rsp == "Er/":
 			logger.error("Error from Pump Controller: " + repr(ser_rsp))
 			return("bad cmd")
@@ -210,7 +220,7 @@ class Pump_Controller(Controller_Parent):
 		else:
 			return(False)
 
-	def set_flow_rate(flow_rate):
+	def set_flow_rate(self, flow_rate):
 		if (self.cmd_controller("FI" + str(flow_rate)) == "OK/"):
 			return(True)
 		else:
@@ -266,6 +276,7 @@ class CalBoard_Controller(Controller_Parent):
 	def state_one(self):
 		# Normal operation while running the mass spec
 		if self.cmd_controller("valves 1") == "valves 1\r\n":
+			time.sleep(1)
 			return True
 		return False
 
@@ -279,6 +290,12 @@ class CalBoard_Controller(Controller_Parent):
 		# Emptying the fluid reservoir
 		# Fluid is pushed out of reservoir by gas
 		if self.cmd_controller("valves 3") == "valves 3\r\n":
+			return True
+		return False
+
+	def state_four(self):
+		# Releasing gas pressure from the system
+		if self.cmd_controller("valves 4") == "valves 4\r\n":
 			return True
 		return False
 
@@ -315,6 +332,7 @@ class CalBoard_Controller(Controller_Parent):
 class MFC_Controller_Parent(Controller_Parent):
 	def __init__(self):
 		self.serial_num = None
+		self.ser = None
 
 	def is_healthy(self):
 		if (self.cmd_controller("?Srnm") == self.serial_num):
@@ -373,8 +391,11 @@ class MFC_Controller_Parent(Controller_Parent):
 		return(ser_rsp)
 
 	def turn_on(self):
-		self.set_streaming("Echo")
+		#self.set_streaming_state("Echo")
 		pass
+
+	def turn_off(self):
+		self.ser.close()
 
 # mass flow controller one
 # this is typically the Nitrogen MFC
@@ -385,17 +406,18 @@ class MFC_Controller_One(MFC_Controller_Parent):
 		time.sleep(1)
 		logger.info("Starting MFC Controller One (Nitrogen)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
-		self.serial_num = 'Srnm1380145\x93\r'
+		self.serial_num = 'Srnm210704\x8c\x92\r'
 		self.turn_on()
 
 # mass flow controller two
 # this is typically the calibration gas MFC
 class MFC_Controller_Two(MFC_Controller_Parent):
 	def __init__(self, app):
-		self.ser = serial.Serial(serial_list[5], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
+		self.ser = serial.Serial(serial_list[4], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
 		time.sleep(1)
 		logger.info("Starting MFC Controller Two (Calibration Gas)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
+		self.serial_num = 'Srnm210704\x8c\x92\r'
 		self.turn_on()
 
 		# Will need to look at app.current_gas in order to appropriately set the gas index on the MFC
@@ -431,7 +453,7 @@ class Sampling_Controller(Controller_Parent):
 # this is the actual GUI code that is executed in the main() function to create the GUI
 class Application(tk.Frame):
 	def __init__(self, master=None):
-		tk.Frame.__init__(self, master)
+		tk.Frame.__init__(self, master, padx=25, pady=25)
 		self.grid()
 		logger.info("Firing up the GUI window.")
 		self.master.title('Girguis ISMS Calibration')
@@ -453,10 +475,10 @@ class Application(tk.Frame):
 		self.refilling_fr           = False
 		self.system_healthy         = tk.BooleanVar()
 		self.system_healthy         = False
+		self.system_setup     		= tk.BooleanVar()
+		self.system_setup 	        = False
 		self.safe_to_kill           = tk.BooleanVar()
 		self.safe_to_kill           = False
-		self.manual_state           = tk.StringVar()
-		self.manual_state.set("Manual Disengaged.")
 		self.current_valve          = tk.IntVar()
 		self.time_string            = tk.IntVar()
 		self.temp_readout           = tk.DoubleVar()
@@ -472,74 +494,81 @@ class Application(tk.Frame):
 	# this fcn defines and creates all the visual components of the GUI
 	def createWidgets(self):
 
-		ttk.Label(self, text="Manual Commands").grid(column=5, row=1)
-		ttk.Label(self, textvariable=self.manual_state).grid(column=5, row=3, columnspan=1)
+		device_readouts = tk.Frame(self, borderwidth=2, relief=tk.SUNKEN, pady=10, padx=10, bg="grey")
+		device_readouts.grid(column=2, row=1, sticky=tk.NW)
+		ttk.Label(device_readouts, text="Device Readouts").grid(column=1, row=1, columnspan=3)		
+		ttk.Label(device_readouts, text="current valve").grid(column=2, row=2)
+		ttk.Label(device_readouts, textvariable=self.current_valve).grid(column=1, row=2)
+		ttk.Label(device_readouts, text="temp readout").grid(column=2, row=3)
+		ttk.Label(device_readouts, textvariable=self.temp_readout).grid(column=1, row=3)
+		ttk.Label(device_readouts, text="goal temp").grid(column=2, row=4)
+		ttk.Label(device_readouts, textvariable=self.goal_temp).grid(column=1, row=4)
+		ttk.Label(device_readouts, text="seconds elapsed").grid(column=2, row=5)
+		ttk.Label(device_readouts, textvariable=self.time_string).grid(column=1, row=5)
 
-		ttk.Label(self, text="STATUS:").grid(column=2, row=8)
-		ttk.Label(self, textvariable=self.status).grid(column=3, row=8, columnspan=2)
+		status_readouts = tk.Frame(self, borderwidth=2, relief=tk.SUNKEN, pady=10, padx=10, bg="grey")
+		status_readouts.grid(column=2, row=2, sticky=tk.NW)
+		ttk.Label(status_readouts, text="Status Readouts").grid(column=1, row=1, columnspan=2)
+		ttk.Label(status_readouts, text="Status:").grid(column=1, row=2)
+		ttk.Label(status_readouts, textvariable=self.status).grid(column=2, row=2, columnspan=2)
+		ttk.Label(status_readouts, text="Details:").grid(column=1, row=3)
+		ttk.Label(status_readouts, textvariable=self.details).grid(column=2, row=3, columnspan=2)
+		ttk.Label(status_readouts, text="Errors:").grid(column=1, row=4)
+		ttk.Label(status_readouts, textvariable=self.errors).grid(column=1, row=4, columnspan=2)
 
-		ttk.Label(self, text="Details:").grid(column=2, row=9)
-		ttk.Label(self, textvariable=self.details).grid(column=3, row=9, columnspan=2)
+		control_frame = tk.Frame(self, borderwidth=2, relief=tk.RAISED, pady=10, padx=10, bg="grey")
+		control_frame.grid(column=1, row=1, rowspan=2, sticky=tk.NW)
+		ttk.Button(control_frame, text="Run Pre-Check", command=self.check_health).grid(column=1, row=1)
+		ttk.Button(control_frame, text="Setup Calibration", command=self.create_setup_window).grid(column=1, row=2)
+		ttk.Label(control_frame, text="").grid(column=1, row=3)
+		ttk.Button(control_frame, text="Begin Calibration", command=self.calibrate).grid(column=1, row=4)
+		ttk.Button(control_frame, text="Pause Calibration", command=self.pause).grid(column=1, row=5)
+		ttk.Button(control_frame, text="Un-pause Calibration", command=self.unpause).grid(column=1, row=6)
+		ttk.Label(control_frame, text="").grid(column=1, row=7)
+		ttk.Button(control_frame, text="Sampling Complete", command=self.sample_complete).grid(column=1, row=8)
+		ttk.Button(control_frame, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=1, row=9)
+		ttk.Button(control_frame, text='Stop Refilling', command= lambda: self.stop_refill()).grid(column=1, row=10)
+		ttk.Label(control_frame, text="").grid(column=1, row=11) 
+		ttk.Button(control_frame, text="Open Manual Controls", command=self.create_manual_window).grid(column=1, row=12)
 
-		ttk.Label(self, text="Errors:").grid(column=2, row=10)
-		ttk.Label(self, textvariable=self.errors).grid(column=3, row=10, columnspan=2)
-
-		ttk.Label(self, text="current valve").grid(column=3, row=2)
-		ttk.Label(self, textvariable=self.current_valve).grid(column=2, row=2)
-
-		ttk.Label(self, text="seconds elapsed").grid(column=3, row=5)
-		ttk.Label(self, textvariable=self.time_string).grid(column=2, row=5)
-
-		ttk.Label(self, text="temp readout").grid(column=3, row=3)
-		ttk.Label(self, textvariable=self.temp_readout).grid(column=2, row=3)
-		ttk.Label(self, text="goal temp").grid(column=3, row=4)
-		ttk.Label(self, textvariable=self.goal_temp).grid(column=2, row=4)
-
-		ttk.Button(self, text='Quit', command= lambda: self.kill()).grid(column=6, row=10)
-
-		ttk.Button(self, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=1, row=8)
-		ttk.Button(self, text='Stop Refilling', command= lambda: self.stop_refill()).grid(column=1, row=9)
-
-		ttk.Entry(self, width=7, textvariable=self.set_valve).grid(column=5, row=4)
-		ttk.Button(self, text="Set Valve", command=self.manual_set_valve).grid(column=6, row=4)
-
-		ttk.Entry(self, width=7, textvariable=self.set_temp).grid(column=5, row=5)
-		ttk.Button(self, text="Set Temp", command=self.manual_set_temp).grid(column=6, row=5)
-
-		ttk.Button(self, text="Run Pre-Check", command=self.check_health).grid(column=1, row=1)
-		ttk.Label(self, text="---").grid(column=1, row=2)
-		ttk.Button(self, text="Begin Calibration", command=self.calibrate).grid(column=1, row=3)
-		ttk.Button(self, text="Pause Calibration", command=self.pause).grid(column=1, row=4)
-		ttk.Button(self, text="Un-pause Calibration", command=self.unpause).grid(column=1, row=5)
-		ttk.Label(self, text="---").grid(column=1, row=6)
-		ttk.Button(self, text="Sampling Complete", command=self.sample_complete).grid(column=1, row=7)
-		ttk.Button(self, text="Engage Manual", command=self.engage_manual).grid(column=5, row=2)
-		ttk.Button(self, text="Disengage Manual", command=self.disengage_manual).grid(column=6, row=2)
-
-
-		ttk.Label(self, text="Choose a gas").grid(column = 5, row = 6)
-		gas_options = ["Carbon Dioxide","Hydrogen","Oxygen","Methane","Sulfide"]
-		self.current_gas = tk.StringVar()
-		ttk.OptionMenu(self, self.current_gas, gas_options[0], *gas_options, command=self.gas_selected).grid(column=5,row=7)
-
+		quit_frame = tk.Frame(self, borderwidth=2, relief=tk.GROOVE, pady=10, padx=10, bg="grey")
+		quit_frame.grid(column=2, row=3, sticky=tk.SE)
+		ttk.Button(quit_frame, text='Quit', command= lambda: self.kill()).grid(column=1, row=1)
 		
 		# create padding for all items
-		for child in self.winfo_children(): 
+		for child in self.winfo_children():
 			child.grid_configure(padx=5, pady=5)
+		for child in control_frame.winfo_children():
+			child.grid_configure(padx=5, pady=5, sticky=tk.W)
+		for child in device_readouts.winfo_children():
+			child.grid_configure(padx=5, pady=5, sticky=tk.W)
+		for child in status_readouts.winfo_children():
+			child.grid_configure(padx=5, pady=5, sticky=tk.W)
 
 	def kill(self):
 		logger.info("Running through kill application safety procedures.\n\n")
+		self.quit()
 		if self.safe_to_kill:
 			self.quit()
 		else:
-			# todo do I need to kill anything else here to be safe?
-
+			#TODO do I need to kill anything else here to be safe?
+			#TODO make sure I set up multiple try blocks here otherwise it will bail after any one error
 			try:
 				bc = Bath_Controller(self)
-				bc.stop()
+				bc.stop_bath()
+				bc.ser.close()
 				# also need to kill the pump
-				pc = Pump_Controller(self)
-				pc.stop()
+				pc = Pump_Controller()
+				pc.stop_pump()
+				pc.ser.close()
+
+				vc = Valve_Controller(self)
+				vc.set_valve(1)
+				vc.ser.close()
+
+				cc = CalBoard_Controller()
+				cc.state_four()
+				cc.ser.close()
 
 				self.safe_to_kill = True
 				self.quit()
@@ -548,11 +577,92 @@ class Application(tk.Frame):
 				logger.error(template)
 				logger.warn("Not able to kill one or more serial devices.")
 				self.quit()
+
 			
+	def create_manual_window(self):
+		if not self.system_healthy:
+			err_msg = "System has not passed health check!"
+			self.errors.set(err_msg)
+			logger.warn(err_msg)
+		elif not self.paused and self.calibrating:
+			err_msg = "System is in calibration mode and has not been paused!"
+			self.errors.set(err_msg)
+			logger.warn(err_msg)
+		else:
+			self.status.set("Manual mode engaged.")
+			logger.info("Manual mode engaged.")
+			self.in_manual = True
+
+			t = tk.Toplevel(self, padx=50, pady=50)
+			t.title("Manual Controls")
+
+			ttk.Entry(t, width=7, textvariable=self.set_valve).grid(column=1, row=1)
+			ttk.Button(t, text="Set Valve", command=self.manual_set_valve).grid(column=2, row=1)
+
+			ttk.Entry(t, width=7, textvariable=self.set_temp).grid(column=1, row=2)
+			ttk.Button(t, text="Set Temp", command=self.manual_set_temp).grid(column=2, row=2)
+			
+			ttk.Button(t, text='Done', command= lambda : self.disengage_manual(t)).grid(column=2, row=3)
+
+			# create padding for all items
+			for child in t.winfo_children():
+				child.grid_configure(padx=5, pady=5, sticky=tk.W)
+
+
+	def disengage_manual(self, manual_window):
+		self.status.set("Manual mode disengaged.")
+		logger.info("Manual mode disengaged.")
+		self.in_manual = False
+		manual_window.destroy()
+
+	def create_setup_window(self):
+		if not self.system_healthy:
+			err_msg = "System has not passed health check!"
+			self.errors.set(err_msg)
+			logger.warn(err_msg)
+		else:
+			logger.info("Setting up calibration parameters.")
+			t = tk.Toplevel(self, padx=50, pady=50)
+			t.title("Calibration Setup")
+
+			ttk.Label(t, text="Choose a gas").grid(column = 2, row = 2)
+
+			gas_options = ["Carbon Dioxide","Hydrogen","Oxygen","Methane", "Nitrogen", "Sulfide"]
+			self.current_gas = tk.StringVar()
+			ttk.OptionMenu(t, self.current_gas, gas_options[0], *gas_options, command=self.gas_selected).grid(column=2,row=3)
+			
+			ttk.Button(t, text='Done', command=lambda : self.calibration_setup(t)).grid(column=2, row=5)
+
+			# create padding for all items
+			for child in t.winfo_children():
+				child.grid_configure(padx=5, pady=5, sticky=tk.W)
 
 	def check_health(self):
 		if (system_health_check(self)):
 			self.system_healthy = True
+		else:
+			self.system_healthy = False
+
+	def calibration_setup(self, setup_window):
+		# turning on the MFCs
+		mfc1 = MFC_Controller_One(self)
+		#mfc2 = MFC_Controller_Two(self)
+		#TODO need to check what the setpoints here should be
+		mfc1.set_setpoint(200)
+		#mfc2.set_setpoint(10)
+
+		#mfc1.set_gas(8) 					#setting gas to Nitrogen
+		mfc1.set_gas(self.gas_selected) 	#setting gas to gas_selected
+
+		mfc1.ser.close()
+		#mfc2.ser.close()
+
+		data_logger.info("MFCs On.")
+		self.status.set("Calibration setup complete.")
+		logger.info("Calibration setup complete.")
+		data_logger.info("Calibration setup complete.")
+		self.system_setup = True
+		setup_window.destroy()
 
 	def update_temp(self, current_temp):
 		self.temp_readout.set(current_temp)
@@ -578,12 +688,16 @@ class Application(tk.Frame):
 		self.refilling_fr = False
 
 	def calibrate(self):
-		if self.system_healthy:
-			calibrate_master(self)
-		else:
+		if not self.system_healthy:
 			err_msg = "System has not passed health check!"
 			self.errors.set(err_msg)
 			logger.warn(err_msg)
+		if not self.system_setup:
+			err_msg = "You have not setup the system yet. Click 'Setup Calibration'."
+			self.errors.set(err_msg)
+			logger.warn(err_msg)
+		else:
+			calibrate_master(self)
 
 	def pause(self):
 		if self.calibrating:
@@ -600,27 +714,6 @@ class Application(tk.Frame):
 			logger.info("Calibration resumed.")
 			self.paused = False
 
-	def engage_manual(self):
-		if not self.system_healthy:
-			err_msg = "System has not passed health check!"
-			self.errors.set(err_msg)
-			logger.warn(err_msg)
-		elif not self.paused and self.calibrating:
-			err_msg = "System is in calibration mode and has not been paused!"
-			self.errors.set(err_msg)
-			logger.warn(err_msg)
-		else:
-			self.status.set("Manual mode engaged.")
-			logger.info("Manual mode engaged.")
-			self.manual_state.set("Manual Engaged!")
-			self.in_manual = True
-
-	def disengage_manual(self):
-		self.status.set("Manual mode disengaged.")
-		logger.info("Manual mode disengaged.")
-		self.manual_state.set("Manual Disengaged.")
-		self.in_manual = False
-
 	def manual_set_temp(self):
 		if not self.in_manual:
 			# report some error and don't proceed
@@ -636,11 +729,13 @@ class Application(tk.Frame):
 		logger.info("Commanding temp to " + str(input_temp))
 		# todo need to fix this!!
 		bc.check_temp()
+		bc.ser.close()
 
 	def manual_set_valve(self):
 		if self.in_manual:
 			vc = Valve_Controller(self)
 			commanding = vc.set_valve(self.set_valve.get())
+			vc.ser.close()
 			if (commanding == True):
 				self.details.set("Commanding valve: " + str(self.set_valve.get()))
 				logger.info("Commanding valve to: " + str(self.set_valve.get()))
@@ -654,6 +749,7 @@ class Application(tk.Frame):
 				logger.warn(err_msg)
 
 	# triggered on change in gas drop down
+	# TODO there is no default Sulfide in the MFC
 	def gas_selected(self, value):
 		# gasIndex value is 1 through 10
 		"""
@@ -676,6 +772,8 @@ class Application(tk.Frame):
 			self.gas_index = 10
 		elif value == "Methane":
 			self.gas_index = 7
+		elif value == "Nitrogen":
+			self.gas_index = 8
 		elif value == "Sulfide":
 			self.gas_index = 1
 		else:
@@ -686,9 +784,9 @@ class Application(tk.Frame):
 def check_serial():
 	for index, serial_port in enumerate(serial_list):
 		try:
-			ser = serial.Serial(serial_port)        # open serial port
-			serial_check_list[index] = ser.name     # check which port was really used
-			ser.close()                             # close port
+			ser = serial.Serial(serial_port, timeout=2)        # open serial port
+			serial_check_list[index] = ser.name     		# check which port was really used
+			ser.close()                             	# close port
 			logger.debug("Acquired serial connection.")
 		except Exception as e:
 			template = str(type(e).__name__) + " occured. Arguments:" + str(e.args)
@@ -704,14 +802,15 @@ def system_health_check(app):
 	# TODO change this to check for all serial connections and need to decide how I handle errors
 	if not any(check_serial()):
 		app.errors.set("ERROR: Serial connection issue.")
-		return
+		return(False)
 
 	### Test Health of Controllers
-
+	
 	bc = Bath_Controller(app)
 	if (bc.is_healthy() == True):
 		# bath controller is healthy and can continue
 		logger.debug("Bath Controller is healthy, moving forward.\n\n")
+		bc.ser.close()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "Bath Controller is unhealthy, stopping calibration.\n\n"
@@ -723,6 +822,7 @@ def system_health_check(app):
 	if (vc.is_healthy() == True):
 		# valve controller is healthy and can continue
 		logger.debug("Valve Controller is healthy, moving forward.\n\n")
+		vc.ser.close()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "Valve Controller is unhealthy, stopping calibration.\n\n"
@@ -733,10 +833,11 @@ def system_health_check(app):
 	pc = Pump_Controller()
 	if (pc.is_healthy() == True):
 		# pump controller is healthy and can continue
-		logger.debug("Pump Controller is healthy, moving forward.\n\n")
+		logger.debug("HPLC Pump Controller is healthy, moving forward.\n\n")
+		pc.ser.close()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
-		err_msg = "Bath is unhealthy, stopping calibration.\n\n"
+		err_msg = "HPLC Pump is unhealthy, stopping calibration.\n\n"
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
@@ -745,6 +846,7 @@ def system_health_check(app):
 	if (cc.is_healthy() == True):
 		# calboard controller is healthy and can continue
 		logger.debug("Calboard Controller is healthy, moving forward.\n\n")
+		cc.ser.close()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "Calboard is unhealthy, stopping calibration.\n\n"
@@ -753,27 +855,32 @@ def system_health_check(app):
 		return(False)
 
 	# MFCs controllers
-	mfc1 = MFC_Controller_One()
+	mfc1 = MFC_Controller_One(app)
 	if (mfc1.is_healthy() == True):
 		# MFC controller is healthy and can continue
 		logger.debug("MFC Controller One is healthy, moving forward.\n\n")
-		return(True)
+		mfc1.ser.close()
+		#mfc1.turn_off()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "MFC One is unhealthy, stopping calibration.\n\n"
 		logger.error(err_msg)
+		#mfc1.turn_off()
 		return(False)
-
-	mfc2 = MFC_Controller_Two()
+	"""
+	mfc2 = MFC_Controller_Two(app)
 	if (mfc2.is_healthy() == True):
 		# MFC controller is healthy and can continue
-		logger.debug("MFC Controller One is healthy, moving forward.\n\n")
-		return(True)
+		mfc2.turn_off()
+		logger.debug("MFC Controller Two is healthy, moving forward.\n\n")
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
-		err_msg = "MFC One is unhealthy, stopping calibration.\n\n"
+		err_msg = "MFC Two is unhealthy, stopping calibration.\n\n"
 		logger.error(err_msg)
+		mfc2.turn_off()
 		return(False)
+
+	"""
 
 	# RGA controller
 
@@ -783,7 +890,6 @@ def system_health_check(app):
 
 	app.details.set("Precheck complete! System healthy.")
 	logger.debug("Precheck complete! System healthy.")
-
 	return(True)
 
 ### END Utility Functions
@@ -792,6 +898,7 @@ def system_health_check(app):
 def calibrate_master(app):
 	app.status.set("Calibration initiated.")
 	logger.info("Calibration initiated.")
+	data_logger.info("Calibration initiated.")
 	app.calibrating = True
 	app.begin_timer(time.time())
 	# start things up in here
@@ -800,8 +907,6 @@ def calibrate_master(app):
 	vc = Valve_Controller(app)
 	pc = Pump_Controller()
 	cc = CalBoard_Controller()
-	mfc1 = MFC_Controller_One()
-	mfc2 = MFC_Controller_Two()
 	#sc = Sampling_Controller()
 
 	time.sleep(2) # allow controller startup time
@@ -826,27 +931,28 @@ def calibrate_master(app):
 	cc.state_one() 				# put the calibration board into normal calibration operation state
 
 	
-	vc.set_valve(1) 			#setting the valve to the zero pressure setting
+	vc.set_valve(1) 			# setting the valve to the zero pressure setting
+	#vc.ser.close()
+	time.sleep(1)
+
 
 	# turning on the HPLC pump
 	pc.set_pressure_limit(6000) # 6000 psi
+	time.sleep(1)
 	pc.set_flow_rate(2000)		# 20ml/min
+	time.sleep(1)
 	pc.turn_on()				# setting to run state
+	data_logger.info("HPLC Pump On.")
 
-	# turning on the MFCs
-	mfc1.set_gas(8) 			#setting gas to Nitrogen
-	mfc2.set_gas(app.gas_selected) #setting gas to gas_selected
-
-	#TODO need to check what the setpoints here should be
-	mfc1.set_setpoint(20)
-	mfc2.set_setpoint(10)
+	#TODO I need to setup something that allows the pressure to equalize in the FR right here
+		# or do it in the Setup Calibration section
 
 	# operational values for queues
-	#valve_queue    = deque([1, 2, 3, 4, 5, 6])
+	#valve_queue    = deque([1, 6, 5, 4, 3, 2])
 	#temp_queue         = deque([6, 4, 2])
 
 	# testing values for queues
-	valve_queue     = deque([1, 2])
+	valve_queue     = deque([5, 4])
 	temp_queue      = deque([20.1, 20.2])
 
 	# Boolean flags to inform calibrate_slave() about its proper state
@@ -855,8 +961,10 @@ def calibrate_master(app):
 	waiting_for_temp        = False # this is set true when waiting for temp
 	waiting_for_sample      = False # this is set true after temp reached and before sampling is done
 	app.currently_sampling  = False # this is a temp solution until the real Sampling Controller is designed
-	app.refilling_fr        = False # flag that is changed to True when FR refill button is pushed  
+	app.refilling_fr        = False # flag that is changed to True when FR refill button is pushed 
+	app.paused				= True 	# the station starts paused so that the user can wait for it to pressurize  
 
+	data_logger.info("Calibration algorithm beginning.")
 	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
 
 # calibration slave function that is repeatedly called after 5 seconds everytime it complete
@@ -872,23 +980,25 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 		logger.debug("Calibration ongoing.")
 		if ready_for_pres_change:
 			logger.debug("Ready for pressure change.")
-			# TODO do I need to check if the pressure is actually correct or just log it for data collection?
-			vc.set_valve(valve_queue.popleft())
-			# TODO for data log log press here
+			valve_port = valve_queue.popleft()
+			vc.set_valve(valve_port)
+			data_logger.info("Pressure set to BPV " + str(valve_port))
+			#TODO need to fix pressure transducers or just use pump press reading
 			logger.info("Pressure is: " + str(cc.read_press()))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
 			logger.debug("Ready for temp change.")
-			bc.change_temp(temp_queue.popleft())
-			# TODO for data log log temp here
+			temp_setting = temp_queue.popleft()
+			bc.change_temp(temp_setting)
+			data_logger.info("Temp set to " + str(temp_setting))
 			ready_for_temp_change = False
 			waiting_for_temp = True
 		if waiting_for_temp:
 			logger.debug("Waiting for temp equilibration.")
 			if(bc.check_temp()): # returns True if bath is at set_temp is met
 				logger.debug("Temperature reached.")
-				# TODO for data log log temp reached here
+				data_logger.info("Temp reached setpoint.")
 				waiting_for_temp = False
 				waiting_for_sample = True
 				app.currently_sampling = True
@@ -901,7 +1011,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			if not app.currently_sampling:
 				logger.info("Done sampling.")
 				app.details.set("Done sampling.")
-				# TODO for data log log sample taken here
+				data_logger.info("Sample taken.")
 				waiting_for_sample = False 
 			if not waiting_for_sample:
 				logger.debug("Checking remaining temp and valve queues.")
@@ -914,7 +1024,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 					ready_for_pres_change = True
 				else: # if there are not temps and no pressures left the calibration is complete
 					app.status.set("Calibration complete!")
-					# TODO for data log temp complete here
+					data_logger.info("Calibration complete.")
 					logger.info("Calibration complete!")
 					logger.info("Approx calibration time was: " + str(app.time_string.get()))
 					app.calibrating = False
