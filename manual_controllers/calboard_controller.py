@@ -17,17 +17,17 @@ import math
 ### Logging Config ###
 
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler('calibration.log')
+#handler = logging.FileHandler('calibration.log')
 handler2 = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s:\t%(message)s')
-handler.setFormatter(formatter)
+#handler.setFormatter(formatter)
 handler2.setFormatter(formatter)
-logger.addHandler(handler)
+#ogger.addHandler(handler)
 logger.addHandler(handler2)
 logger.setLevel(logging.DEBUG)
 
 
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14111']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411']
 serial_check_list = [None] * len(serial_list)
 
 def check_serial():
@@ -106,8 +106,13 @@ class CalBoard_Controller():
 
 	def read_press(self):
 		#Command to get the pressure values, three values of the form "num, num, num" returned as a list of ints
-		pressures = self.cmd_controller("press")
-		return map(int, pressures.split(", "))
+		pressures 	= self.cmd_controller("press")
+		press_list 	= map(int, pressures.split(", "))
+		high_press 	= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
+		low_press 	= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
+		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V))
+
+		return (high_press, low_press)
 
 
 def check_health():
@@ -155,6 +160,8 @@ if any(check_serial()):
 				cc.flush_on()
 			elif user_input == 5:
 				cc.flush_off()
+			elif user_input == 6:
+				print(cc.read_press())
 			elif user_input == -1:
 				break
 			else:

@@ -121,7 +121,6 @@ class Bath_Controller(Controller_Parent):
 			return(float(ser_rsp.split(" ")[1]))
 
 	def change_temp(self, temp):
-		# todo do I need to check to make sure temp is within constraints set?
 		ser_rsp = self.cmd_controller("W SP " + str(temp))
 		if ser_rsp == "$\r\n":
 			self.set_temp = temp
@@ -274,29 +273,35 @@ class CalBoard_Controller(Controller_Parent):
 		pass
 
 	# these commands change the state of the solenoid valves on the calibration board
-	def state_one(self):
-		# Normal operation while running the mass spec
-		if self.cmd_controller("valves 1") == "valves 1\r\n":
+	def normal_operation(self, gas_outlet="v9"):
+		# Normal operation while running the mass spec with gas outlet v9
+		if self.cmd_controller("normal_operation_" + gas_outlet) == "normal_operation_" + gas_outlet + "\r\n":
 			time.sleep(1)
 			return True
 		return False
 
-	def state_two(self):
-		# Filling an empty fluid reservoir
-		if self.cmd_controller("valves 2") == "valves 2\r\n":
+	def seawater_in(self):
+		# Filling an empty fluid reservoir with seawater
+		if self.cmd_controller("seawater_in") == "seawater_in\r\n":
 			return True
 		return False
 
-	def state_three(self):
+	def di_water_in(self):
+		# Filling an empty fluid reservoir with seawater
+		if self.cmd_controller("di_water_in") == "di_water_in\r\n":
+			return True
+		return False
+
+	def emptying_fr(self):
 		# Emptying the fluid reservoir
 		# Fluid is pushed out of reservoir by gas
-		if self.cmd_controller("valves 3") == "valves 3\r\n":
+		if self.cmd_controller("emptying_fr") == "emptying_fr\r\n":
 			return True
 		return False
 
-	def state_four(self):
+	def release_press(self):
 		# Releasing gas pressure from the system
-		if self.cmd_controller("valves 4") == "valves 4\r\n":
+		if self.cmd_controller("release_press") == "release_press\r\n":
 			return True
 		return False
 
@@ -313,21 +318,26 @@ class CalBoard_Controller(Controller_Parent):
 		return False
 
 	def refill_fr(self):
-		self.state_two()    # state two for filling the fluid reservoir
+		self.seawater_in()  # state two for filling the fluid reservoir
 		time.sleep(1)       # allow time to change valves
 		self.flush_on()     # begin filling fluid reservoir
 
-	def stop_refill(self):
-		self.flush_off()    # turn off pump
-		time.sleep(2)       # allow time for pressure to die down from flush pump
-		self.state_one()    # change back to standard ISMS calibration operation state
-		time.sleep(1)       # allow time to change valves
+	def stop_refill(self, gas_outlet="v9"):
+		self.flush_off()    				# turn off pump
+		time.sleep(2)       				# allow time for pressure to die down from flush pump
+		self.normal_operation(gas_outlet)   # change back to standard ISMS calibration operation state
+		time.sleep(1)      					# allow time to change valves
 
 	def read_press(self):
-		#Command to get the pressure values
-		# three values of the form "num, num, num" returned as a list of ints
-		pressures = self.cmd_controller("press")
-		return map(int, pressures.split(", "))
+		#Command to get the pressure transducer values
+		# two values of the form "high_press, low_press" returned as a list of ints
+		pressures 	= self.cmd_controller("press")
+		press_list 	= map(int, pressures.split(", "))
+		high_press 	= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
+		low_press 	= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
+		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V))
+
+		return (high_press, low_press)
 
 
 class MFC_Controller_Parent(Controller_Parent):
@@ -489,6 +499,9 @@ class Application(tk.Frame):
 		self.in_manual              = False
 		self.gas_index				= tk.IntVar()
 		self.gas_index				= -1
+		self.mfc1_flow 				= tk.IntVar()
+		self.mfc2_flow 				= tk.IntVar()
+		self.gas_outlet 			= tk.StringVar()
 
 		self.createWidgets()
 
@@ -528,7 +541,7 @@ class Application(tk.Frame):
 		ttk.Label(control_frame, text="").grid(column=1, row=7)
 		ttk.Button(control_frame, text="Sampling Complete", command=self.sample_complete).grid(column=1, row=8)
 		ttk.Button(control_frame, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=1, row=9)
-		ttk.Button(control_frame, text='Stop Refilling', command= lambda: self.stop_refill()).grid(column=1, row=10)
+		ttk.Button(control_frame, text='Stop Refilling', command= lambda: self.stop_refill_button(self.gas_outlet.get())).grid(column=1, row=10)
 		ttk.Label(control_frame, text="").grid(column=1, row=11) 
 		ttk.Button(control_frame, text="Open Manual Controls", command=self.create_manual_window).grid(column=1, row=12)
 
@@ -545,6 +558,12 @@ class Application(tk.Frame):
 			child.grid_configure(padx=5, pady=5, sticky=tk.W)
 		for child in status_readouts.winfo_children():
 			child.grid_configure(padx=5, pady=5, sticky=tk.W)
+
+	def check_health(self):
+		if (system_health_check(self)):
+			self.system_healthy = True
+		else:
+			self.system_healthy = False
 
 	def kill(self):
 		logger.info("Running through kill application safety procedures.\n\n")
@@ -568,7 +587,7 @@ class Application(tk.Frame):
 				vc.ser.close()
 
 				cc = CalBoard_Controller()
-				cc.state_four()
+				cc.release_press()
 				cc.ser.close()
 
 				self.safe_to_kill = True
@@ -578,7 +597,6 @@ class Application(tk.Frame):
 				logger.error(template)
 				logger.warn("Not able to kill one or more serial devices.")
 				self.quit()
-
 			
 	def create_manual_window(self):
 		if not self.system_healthy:
@@ -617,11 +635,11 @@ class Application(tk.Frame):
 		manual_window.destroy()
 
 	def create_setup_window(self):
-		if not self.system_healthy:
-			err_msg = "System has not passed health check!"
-			self.errors.set(err_msg)
-			logger.warn(err_msg)
-		else:
+		#if not self.system_healthy:
+		#	err_msg = "System has not passed health check!"
+	#		self.errors.set(err_msg)
+	#		logger.warn(err_msg)
+	#	else:
 			logger.info("Setting up calibration parameters.")
 			t = tk.Toplevel(self, padx=50, pady=50)
 			t.title("Calibration Setup")
@@ -630,40 +648,78 @@ class Application(tk.Frame):
 
 			gas_options = ["Carbon Dioxide","Hydrogen","Oxygen","Methane", "Nitrogen", "Sulfide"]
 			self.current_gas = tk.StringVar()
-			ttk.OptionMenu(t, self.current_gas, gas_options[0], *gas_options, command=self.gas_selected).grid(column=2,row=3)
+			ttk.OptionMenu(t, self.current_gas, gas_options[0], *gas_options, command=self.gas_selected).grid(column=3,row=2)
+
+			ttk.Label(t, text="Choose gas flow for MFC One (Nitrogen):").grid(column = 2, row = 4)
+			ttk.Entry(t, width=7, textvariable=self.mfc1_flow).grid(column=3, row=4)
+			ttk.Label(t, text="Choose gas flow for MFC Two (Sample Gas):").grid(column = 2, row = 5)
+			ttk.Entry(t, width=7, textvariable=self.mfc2_flow).grid(column=3, row=5)
+			ttk.Label(t, text="Choose gas outlet solenoid (type exactly v8 or v9):").grid(column = 2, row = 6)
+			ttk.Entry(t, width=7, textvariable=self.gas_outlet).grid(column=3, row=6)
+
+			ttk.Button(t, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=2, row=7)
+			ttk.Button(t, text='Stop Refilling', command= lambda: self.stop_refill_button(self.gas_outlet.get())).grid(column=2, row=8)
 			
-			ttk.Button(t, text='Done', command=lambda : self.calibration_setup(t)).grid(column=2, row=5)
+			ttk.Button(t, text='Begin Cooling + Pressurization', command=lambda : self.calibration_setup(t)).grid(column=2, row=9)
+
 
 			# create padding for all items
 			for child in t.winfo_children():
 				child.grid_configure(padx=5, pady=5, sticky=tk.W)
 
-	def check_health(self):
-		if (system_health_check(self)):
-			self.system_healthy = True
-		else:
-			self.system_healthy = False
+	#def set_variable(self):
 
 	def calibration_setup(self, setup_window):
 		# turning on the MFCs
 		mfc1 = MFC_Controller_One(self)
-		#mfc2 = MFC_Controller_Two(self)
-		#TODO need to check what the setpoints here should be
-		mfc1.set_setpoint(200)
-		#mfc2.set_setpoint(10)
+		mfc2 = MFC_Controller_Two(self)
+		
+		mfc1.set_setpoint(self.mfc1_flow.get())
+		mfc2.set_setpoint(self.mfc2_flow.get())
 
-		#mfc1.set_gas(8) 					#setting gas to Nitrogen
+		mfc1.set_gas(8) 	#setting gas to Nitrogen
 		mfc1.set_gas(self.gas_selected) 	#setting gas to gas_selected
 
 		mfc1.ser.close()
-		#mfc2.ser.close()
+		mfc2.ser.close()
+
+		vc = Valve_Controller(self)
+		cc = CalBoard_Controller()
+
+		# get solenoid valves in correct state
+		cc.normal_operation_v9(self.gas_outlet.get()) 				# put the calibration board into normal calibration operation state
+		vc.set_valve(1) 			# setting the valve to the zero pressure setting
+		time.sleep(1)				# wait for valco to get set
+		vc.ser.close()
+		cc.ser.close()
+
+		#TODO do I want the HPLC pump running for this hour?
+
+		# send the bath to 2 degrees
+		bc = Bath_Controller(self)
+		bc.change_temp(2)
+		bc.ser.close()
 
 		data_logger.info("MFCs On.")
-		self.status.set("Calibration setup complete.")
-		logger.info("Calibration setup complete.")
-		data_logger.info("Calibration setup complete.")
+		data_logger.info("Bath cooling to 2.")
+		self.status.set("Cooling + Pressurization Ongoing")
 		self.system_setup = True
+
+		counter = 0
+		self.wait_for_cooldown(counter)
+
 		setup_window.destroy()
+
+	def wait_for_cooldown(self, counter):
+		if counter >= 120:
+			data_logger.info("Cooling + Pressurization Complete!")
+			logger.info("Cooling + Pressurization Complete!")
+			self.status.set("Calibration setup complete!")
+			self.details.set("Cooling down and pressure equilibration complete!")
+		else:
+			logger.info("Cooling + Pressurization Ongoing. " + str((120 - counter) *30) + " seconds remain.")
+			counter += 1
+			self.after(30000, lambda: self.wait_for_cooldown(counter))
 
 	def update_temp(self, current_temp):
 		self.temp_readout.set(current_temp)
@@ -683,9 +739,9 @@ class Application(tk.Frame):
 		cc = CalBoard_Controller()
 		cc.refill_fr()
 
-	def stop_refill(self):
+	def stop_refill_button(self, gas_outlet):
 		cc = CalBoard_Controller()
-		cc.stop_refill()
+		cc.stop_refill(gas_outlet)
 		self.refilling_fr = False
 
 	def calibrate(self):
@@ -750,9 +806,7 @@ class Application(tk.Frame):
 				logger.warn(err_msg)
 
 	# triggered on change in gas drop down
-	# TODO there is no default Sulfide in the MFC
 	def gas_selected(self, value):
-		# gasIndex value is 1 through 10
 		"""
 		1 - Air 
 		2 - Argon
@@ -775,8 +829,8 @@ class Application(tk.Frame):
 			self.gas_index = 7
 		elif value == "Nitrogen":
 			self.gas_index = 8
-		elif value == "Sulfide":
-			self.gas_index = 1
+		elif value == "Sulfide": # the Girguis gas mix is 95% nitrogen 5% HS2 so for the MFC inputting N is fine
+			self.gas_index = 8
 		else:
 			self.gas_index = 1
 
@@ -915,37 +969,20 @@ def calibrate_master(app):
 
 	### Startup Procedure
 
-	"""
-
-	data collection is turned on for the mass spec
-
-	run through prechecks (manually call check_health by running prechecks)
-
-	manually check FR level and click to refill if needed
-
-	get the loops up to their operational pressure
-		HPLC turns on now
-		MFCs turn on now
-
-	"""
-
-	cc.state_one() 				# put the calibration board into normal calibration operation state
-
-	
+	# get solenoid valves in correct state
+	cc.normal_operation(self.gas_outlet.get()) 	# put the calibration board into normal calibration operation state
 	vc.set_valve(1) 			# setting the valve to the zero pressure setting
-	#vc.ser.close()
-	time.sleep(1)
-
+	time.sleep(1)				# wait for valco to get set
 
 	# turning on the HPLC pump
-	pc.set_pressure_limit(6000) # 6000 psi
+	pc.set_pressure_limit(6000) # max press at 6000 psi
 	time.sleep(1)
 	pc.set_flow_rate(2000)		# 20ml/min
 	time.sleep(1)
 	pc.turn_on()				# setting to run state
 	data_logger.info("HPLC Pump On.")
 
-	#TODO I need to setup something that allows the pressure to equalize in the FR right here
+	#TODO I need to setup something that allows the pressure to equalize in the FR and allows temp to equalize
 		# or do it in the Setup Calibration section
 
 	# operational values for queues
@@ -971,8 +1008,6 @@ def calibrate_master(app):
 # calibration slave function that is repeatedly called after 5 seconds everytime it complete
 	# this delay allows the GUI to remain functional
 def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
-	# test this entirely
-
 	if app.paused:
 		logger.debug("Calibration paused.")
 		app.details.set("Calibration paused.")
@@ -985,7 +1020,8 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			vc.set_valve(valve_port)
 			data_logger.info("Pressure set to BPV " + str(valve_port))
 			#TODO need to fix pressure transducers or just use pump press reading
-			logger.info("Pressure is: " + str(cc.read_press()))
+			high_press, low_press = cc.read_press()
+			logger.info("Pressure is: " + str(high_press) + ', ' + str(low_press))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
@@ -1013,6 +1049,8 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 				logger.info("Done sampling.")
 				app.details.set("Done sampling.")
 				data_logger.info("Sample taken.")
+				high_press, low_press = cc.read_press()
+				data_logger.info(str("Temp: " + bc.read_temp()) + "Pressure (high, low): " + str(high_press) + ', ' + str(low_press))
 				waiting_for_sample = False 
 			if not waiting_for_sample:
 				logger.debug("Checking remaining temp and valve queues.")

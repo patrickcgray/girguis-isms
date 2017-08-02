@@ -12,9 +12,9 @@ int v9 = 47;
 
 int flushPin = 52;
 
-int press1 = A8;
-int press2 = A9;
-int press3 = A10;
+int pressPwr = 50;
+int pressHigh = A8;
+int pressLow = A0;
 
 void setup() {
   Serial.begin(9600); // set the baud rate
@@ -31,7 +31,13 @@ void setup() {
   pinMode(v7, OUTPUT);
   pinMode(v8, OUTPUT);
   pinMode(v9, OUTPUT);
+ 
   pinMode(flushPin, OUTPUT);
+
+  pinMode(pressPwr, OUTPUT);
+  pinMode(pressLow, INPUT_PULLUP);
+  pinMode(pressHigh, INPUT_PULLUP);
+  
   //make all solenoid valves closed
   digitalWrite(v1, LOW);
   digitalWrite(v2, LOW);
@@ -43,22 +49,14 @@ void setup() {
   digitalWrite(v8, LOW);
   digitalWrite(v9, LOW);
   digitalWrite(flushPin, LOW);
-  // run through any necessary health checks
-  //?
-  
-  // check solenoid valves and flush pump
-  //?
-  
-  //Serial.println('1'); // print "Ready" once
 }
 
 void loop() {
   String input;
   if (Serial.available()) { // only run through loop if data has been sent
     input = Serial.readString(); // read the incoming data
-    if (input == "valves 1") {
+    if (input == "normal_operation_v9") {
       // Normal operation while running the mass spec
-            
       digitalWrite(LED_BUILTIN, LOW);
       digitalWrite(v1, LOW);
       digitalWrite(v2, LOW);
@@ -70,13 +68,25 @@ void loop() {
       digitalWrite(v8, LOW);
       digitalWrite(v9, HIGH);
 
-      Serial.println("valves 1");
+      Serial.println("normal_operation_v9");
     }
-    else if (input == "valves 2") {
+    else if (input == "normal_operation_v8") {
+      // Normal operation while running the mass spec
+      digitalWrite(LED_BUILTIN, LOW);
+      digitalWrite(v1, LOW);
+      digitalWrite(v2, LOW);
+      digitalWrite(v3, HIGH);
+      digitalWrite(v4, LOW);
+      digitalWrite(v5, HIGH);
+      digitalWrite(v6, LOW);
+      digitalWrite(v7, LOW);
+      digitalWrite(v8, HIGH);
+      digitalWrite(v9, LOW);
+
+      Serial.println("normal_operation_v8");
+    }
+    else if (input == "seawater_in") {
       // Filling an empty reservoir
-      
-      digitalWrite(LED_BUILTIN, HIGH);
-      // v1 and v2 change depending on what you're filling with
       digitalWrite(v1, LOW); // DI Water
       digitalWrite(v2, HIGH); // Seawater
       digitalWrite(v3, LOW);
@@ -87,15 +97,27 @@ void loop() {
       digitalWrite(v8, HIGH);
       digitalWrite(v9, LOW);
       
-      Serial.println("valves 2");
+      Serial.println("seawater_in");
     }
-    else if (input == "valves 3") {
+    else if (input == "di_water_in") {
+      // Filling or flushing an empty reservoir
+      digitalWrite(LED_BUILTIN, HIGH);
+      digitalWrite(v1, HIGH); // DI Water
+      digitalWrite(v2, LOW); // Seawater
+      digitalWrite(v3, LOW);
+      digitalWrite(v4, LOW);
+      digitalWrite(v5, LOW);
+      digitalWrite(v6, LOW);
+      digitalWrite(v7, HIGH);
+      digitalWrite(v8, HIGH);
+      digitalWrite(v9, LOW);
+      
+      Serial.println("di_water_in");
+    }
+    else if (input == "emptying_fr") {
       // Emptying the fluid reservoir
       // Fluid is pushed out of reservoir by gas
-      // TODO do I need to turn that gas on?
-      
-      digitalWrite(LED_BUILTIN, HIGH);
-      digitalWrite(v1, HIGH); // v1 and v2 change depending on what you're filling with
+      digitalWrite(v1, HIGH);
       digitalWrite(v2, LOW);
       digitalWrite(v3, HIGH);
       digitalWrite(v4, HIGH);
@@ -105,9 +127,9 @@ void loop() {
       digitalWrite(v8, LOW);
       digitalWrite(v9, LOW);
       
-      Serial.println("valves 3");
+      Serial.println("emptying_fr");
     }
-    else if (input == "valves 4") {
+    else if (input == "release_press") {
       // Releasing pressure from the system
       digitalWrite(LED_BUILTIN, LOW);
       digitalWrite(v1, LOW);
@@ -120,18 +142,17 @@ void loop() {
       digitalWrite(v8, HIGH);
       digitalWrite(v9, LOW);
       
-      Serial.println("valves 4");
+      Serial.println("release_press");
     }
     else if (input == "press") {
+        digitalWrite(pressPwr, HIGH);
+        delay(100);
         String pressValues = "";
-        int val1 = analogRead(press1);
-        int val2 = analogRead(press2);
-        int val3 = analogRead(press3);
-        pressValues.concat(val1);
+        int valHigh = analogRead(pressHigh);
+        int valLow = analogRead(pressLow);
+        pressValues.concat(valHigh);
         pressValues.concat(", ");
-        pressValues.concat(val2);
-        pressValues.concat(", ");
-        pressValues.concat(val3);
+        pressValues.concat(valLow);
         Serial.println(pressValues);
     }
     else if (input == "flushOn") {
