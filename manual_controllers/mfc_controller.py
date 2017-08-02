@@ -18,17 +18,16 @@ import binascii
 ### Logging Config ###
 showtime = time.strftime("%Y_%m_%d-%H_%M_%S", time.gmtime())
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler('_calibration' + showtime + '.log')
+#handler = logging.FileHandler('_calibration' + showtime + '.log')
 handler2 = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s:\t%(message)s')
-handler.setFormatter(formatter)
+#handler.setFormatter(formatter)
 handler2.setFormatter(formatter)
-logger.addHandler(handler)
+#logger.addHandler(handler)
 logger.addHandler(handler2)
 logger.setLevel(logging.DEBUG)
 
 from calcCRC import calcCRC
-
 
 serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411', '/dev/tty.usbserial']
 serial_check_list = [None] * len(serial_list)

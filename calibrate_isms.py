@@ -37,7 +37,7 @@ data_logger.setLevel(logging.INFO)
 ### Serial Device Controllers ###
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial186', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial195']
 # TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
@@ -134,6 +134,7 @@ class Bath_Controller(Controller_Parent):
 
 	def check_temp(self):
 		current_temp = self.read_temp()
+		#app.update_temp(current_temp)
 		# checking if temp is within .05 degrees of setpoint and if so reporting back True
 		if (current_temp < self.set_temp + .05) and (current_temp > self.set_temp - .05):
 			logger.info("Temperature reached. Carry on.")
@@ -948,12 +949,12 @@ def calibrate_master(app):
 		# or do it in the Setup Calibration section
 
 	# operational values for queues
-	#valve_queue    = deque([1, 6, 5, 4, 3, 2])
-	#temp_queue         = deque([6, 4, 2])
+	valve_queue    = deque([1, 6, 5, 4, 3, 2])
+	temp_queue         = deque([6, 4, 2])
 
 	# testing values for queues
-	valve_queue     = deque([5, 4])
-	temp_queue      = deque([20.1, 20.2])
+	#valve_queue     = deque([5, 4])
+	#temp_queue      = deque([20.1, 20.2])
 
 	# Boolean flags to inform calibrate_slave() about its proper state
 	ready_for_pres_change   = True  # this starts True, and is reset True after last temp and sampling
@@ -1020,7 +1021,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 					ready_for_temp_change = True
 				elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
 					logger.debug("Valve queue still exists.")
-					temp_queue = deque([20.1, 20.2])
+					temp_queue = deque([6, 4, 2])
 					ready_for_pres_change = True
 				else: # if there are not temps and no pressures left the calibration is complete
 					app.status.set("Calibration complete!")
