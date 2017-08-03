@@ -14,7 +14,8 @@ int flushPin = 52;
 
 int pressPwr = 50;
 int pressHigh = A8;
-int pressLow = A0;
+int pressLow = A9;
+int pressHighLow = A10;
 
 void setup() {
   Serial.begin(9600); // set the baud rate
@@ -35,8 +36,9 @@ void setup() {
   pinMode(flushPin, OUTPUT);
 
   pinMode(pressPwr, OUTPUT);
-  pinMode(pressLow, INPUT_PULLUP);
-  pinMode(pressHigh, INPUT_PULLUP);
+  pinMode(pressHigh, INPUT);
+  pinMode(pressLow, INPUT);
+  pinMode(pressHighLow, INPUT);
   
   //make all solenoid valves closed
   digitalWrite(v1, LOW);
@@ -150,9 +152,13 @@ void loop() {
         String pressValues = "";
         int valHigh = analogRead(pressHigh);
         int valLow = analogRead(pressLow);
+        int valHighLow = analogRead(pressHighLow);
         pressValues.concat(valHigh);
         pressValues.concat(", ");
         pressValues.concat(valLow);
+        pressValues.concat(", ");
+        pressValues.concat(valHighLow);
+        
         Serial.println(pressValues);
     }
     else if (input == "flushOn") {

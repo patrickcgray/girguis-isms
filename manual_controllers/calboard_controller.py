@@ -44,21 +44,18 @@ def check_serial():
 	return serial_check_list
 
 
+# controller for the arduino that controls the circuit board that controls the calibration board
 class CalBoard_Controller():
 	def __init__(self):
-		self.ser = serial.Serial(serial_list[3], 9600)
+		self.ser = serial.Serial(serial_list[3], 9600, timeout=3)
 		time.sleep(1)
 		logger.info("Starting Calibration Board Controller")
 		logger.debug("Connected over serial at " + str(self.ser.name))
 
 	def is_healthy(self):
 		if (self.cmd_controller("?") == '1\r\n'):
-			print("*********we're healthy")
 			return(True)
 		else:
-			print("***********is healthy from calboard response begin***")
-			print(self.cmd_controller("?"))
-			print("****end msg****")
 			return(False)
 
 	def cmd_controller(self, cmd):
@@ -74,25 +71,40 @@ class CalBoard_Controller():
 	def turn_on(self):
 		pass
 
-	def state_one(self):
-		# Normal operation while running the mass spec
-		if self.cmd_controller("valves 1") == "valves 1\r\n":
+	# these commands change the state of the solenoid valves on the calibration board
+	def normal_operation(self, gas_outlet="v9"):
+		# Normal operation while running the mass spec with gas outlet v9
+		if self.cmd_controller("normal_operation_" + gas_outlet) == "normal_operation_" + gas_outlet + "\r\n":
+			time.sleep(1)
 			return True
 		return False
 
-	def state_two(self):
-		# Filling an empty fluid reservoir
-		if self.cmd_controller("valves 2") == "valves 2\r\n":
+	def seawater_in(self):
+		# Filling an empty fluid reservoir with seawater
+		if self.cmd_controller("seawater_in") == "seawater_in\r\n":
 			return True
 		return False
 
-	def state_three(self):
+	def di_water_in(self):
+		# Filling an empty fluid reservoir with seawater
+		if self.cmd_controller("di_water_in") == "di_water_in\r\n":
+			return True
+		return False
+
+	def emptying_fr(self):
 		# Emptying the fluid reservoir
-    	# Fluid is pushed out of reservoir by gas
-		if self.cmd_controller("valves 3") == "valves 3\r\n":
+		# Fluid is pushed out of reservoir by gas
+		if self.cmd_controller("emptying_fr") == "emptying_fr\r\n":
 			return True
 		return False
 
+	def release_press(self):
+		# Releasing gas pressure from the system
+		if self.cmd_controller("release_press") == "release_press\r\n":
+			return True
+		return False
+
+	# these two commands turn on and off the flush pump on the calibration board
 	def flush_on(self):
 		# Ensure that we're in state 2 before doing this
 		if (self.cmd_controller("flushOn") == "flushOn"):
@@ -104,15 +116,28 @@ class CalBoard_Controller():
 			return True
 		return False
 
-	def read_press(self):
-		#Command to get the pressure values, three values of the form "num, num, num" returned as a list of ints
-		pressures 	= self.cmd_controller("press")
-		press_list 	= map(int, pressures.split(", "))
-		high_press 	= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
-		low_press 	= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
-		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V))
+	def refill_fr(self):
+		self.seawater_in()  # state two for filling the fluid reservoir
+		time.sleep(1)       # allow time to change valves
+		self.flush_on()     # begin filling fluid reservoir
 
-		return (high_press, low_press)
+	def stop_refill(self, gas_outlet="v9"):
+		self.flush_off()    				# turn off pump
+		time.sleep(2)       				# allow time for pressure to die down from flush pump
+		self.normal_operation(gas_outlet)   # change back to standard ISMS calibration operation state
+		time.sleep(1)      					# allow time to change valves
+
+	def read_press(self):
+		#Command to get the pressure transducer values
+		# three values of the form "high_press, low_press, high_low_press" returned as a list of ints
+		pressures 		= self.cmd_controller("press")
+		press_list 		= map(int, pressures.split(", "))
+		high_press 		= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
+		low_press 		= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
+		high_low_press 	= 75.0 * (press_list[2]/1023.0) * 5.0 - 375.0
+		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V)*.5V)
+
+		return (float("{0:.2f}".format(high_press)), float("{0:.2f}".format(low_press)), float("{0:.2f}".format(high_low_press)))
 
 
 def check_health():
@@ -151,18 +176,21 @@ if any(check_serial()):
 			user_input = input("Enter user input:")
 			print(user_input)
 			if user_input == 1:
-				cc.state_one()
+				cc.normal_operation("v9")
 			elif user_input == 2:
-				cc.state_two()
+				cc.normal_operation("v8")
 			elif user_input == 3:
-				cc.state_three()
+				cc.seawater_in()
 			elif user_input == 4:
-				cc.flush_on()
+				cc.di_water_in()
 			elif user_input == 5:
-				cc.flush_off()
+				cc.release_press()
 			elif user_input == 6:
+				cc.flush_off()
+			elif user_input == 7:
 				print(cc.read_press())
 			elif user_input == -1:
+				cc.ser.close()
 				break
 			else:
 				print("didn't match option")

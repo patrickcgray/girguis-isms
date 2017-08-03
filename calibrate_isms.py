@@ -37,7 +37,7 @@ data_logger.setLevel(logging.INFO)
 ### Serial Device Controllers ###
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial195']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial209']
 # TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
@@ -133,7 +133,7 @@ class Bath_Controller(Controller_Parent):
 
 	def check_temp(self):
 		current_temp = self.read_temp()
-		#app.update_temp(current_temp)
+		self.app.update_temp(current_temp)
 		# checking if temp is within .05 degrees of setpoint and if so reporting back True
 		if (current_temp < self.set_temp + .05) and (current_temp > self.set_temp - .05):
 			logger.info("Temperature reached. Carry on.")
@@ -330,14 +330,16 @@ class CalBoard_Controller(Controller_Parent):
 
 	def read_press(self):
 		#Command to get the pressure transducer values
-		# two values of the form "high_press, low_press" returned as a list of ints
-		pressures 	= self.cmd_controller("press")
-		press_list 	= map(int, pressures.split(", "))
-		high_press 	= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
-		low_press 	= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
-		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V))
+		# three values of the form "high_press, low_press, high_low_press" returned as a list of ints
+		pressures 		= self.cmd_controller("press")
+		press_list 		= map(int, pressures.split(", "))
+		high_press 		= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
+		low_press 		= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
+		high_low_press 	= 75.0 * (press_list[2]/1023.0) * 5.0 - 375.0
+		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V)*.5V)
 
-		return (high_press, low_press)
+		return (float("{0:.2f}".format(high_press)), float("{0:.2f}".format(low_press)), float("{0:.2f}".format(high_low_press)))
+
 
 
 class MFC_Controller_Parent(Controller_Parent):
@@ -654,18 +656,21 @@ class Application(tk.Frame):
 			ttk.Entry(t, width=7, textvariable=self.mfc1_flow).grid(column=3, row=4)
 			ttk.Label(t, text="Choose gas flow for MFC Two (Sample Gas):").grid(column = 2, row = 5)
 			ttk.Entry(t, width=7, textvariable=self.mfc2_flow).grid(column=3, row=5)
-			ttk.Label(t, text="Choose gas outlet solenoid (type exactly v8 or v9):").grid(column = 2, row = 6)
+			ttk.Label(t, text="Choose gas outlet solenoid (type exactly 'v8' or 'v9)':").grid(column = 2, row = 6)
 			ttk.Entry(t, width=7, textvariable=self.gas_outlet).grid(column=3, row=6)
 
 			ttk.Button(t, text='Start FR Refill', command= lambda: self.start_refill()).grid(column=2, row=7)
 			ttk.Button(t, text='Stop Refilling', command= lambda: self.stop_refill_button(self.gas_outlet.get())).grid(column=2, row=8)
 			
-			ttk.Button(t, text='Begin Cooling + Pressurization', command=lambda : self.calibration_setup(t)).grid(column=2, row=9)
+			done_button = ttk.Button(t, text='Begin Cooling + Pressurization', command=lambda : self.calibration_setup(t))
+			done_button.grid(column=2, row=9, rowspan=1)
 
 
 			# create padding for all items
 			for child in t.winfo_children():
 				child.grid_configure(padx=5, pady=5, sticky=tk.W)
+
+			done_button.grid(sticky=tk.E)
 
 	#def set_variable(self):
 
@@ -993,6 +998,11 @@ def calibrate_master(app):
 	#valve_queue     = deque([5, 4])
 	#temp_queue      = deque([20.1, 20.2])
 
+	# equilibration counter, needs to equal 600000 ms / interval ms
+	equilibration_counter = 0
+	interval = 5000 # interval for calibration app in milliseconds
+
+
 	# Boolean flags to inform calibrate_slave() about its proper state
 	ready_for_pres_change   = True  # this starts True, and is reset True after last temp and sampling
 	ready_for_temp_change   = False # this is set after pres change and after sampling
@@ -1003,11 +1013,13 @@ def calibrate_master(app):
 	app.paused				= True 	# the station starts paused so that the user can wait for it to pressurize  
 
 	data_logger.info("Calibration algorithm beginning.")
-	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample)
+	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, 
+		waiting_for_temp, waiting_for_sample, equilibration_counter, interval)
 
 # calibration slave function that is repeatedly called after 5 seconds everytime it complete
 	# this delay allows the GUI to remain functional
-def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample):
+def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, 
+	waiting_for_temp, waiting_for_sample, equilibration_counter, interval):
 	if app.paused:
 		logger.debug("Calibration paused.")
 		app.details.set("Calibration paused.")
@@ -1020,7 +1032,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			vc.set_valve(valve_port)
 			data_logger.info("Pressure set to BPV " + str(valve_port))
 			#TODO need to fix pressure transducers or just use pump press reading
-			high_press, low_press = cc.read_press()
+			high_press, low_press, high_low_press = cc.read_press()
 			logger.info("Pressure is: " + str(high_press) + ', ' + str(low_press))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
@@ -1040,37 +1052,44 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 				waiting_for_sample = True
 				app.currently_sampling = True
 		if waiting_for_sample:
-			logger.debug("Waiting for sample.")
-			app.details.set("Waiting for sample.")
-			if app.refilling_fr:
-				logger.info("Refilling FR.")
-				app.details.set("Refilling FR.")
-			if not app.currently_sampling:
-				logger.info("Done sampling.")
-				app.details.set("Done sampling.")
-				data_logger.info("Sample taken.")
-				high_press, low_press = cc.read_press()
-				data_logger.info(str("Temp: " + bc.read_temp()) + "Pressure (high, low): " + str(high_press) + ', ' + str(low_press))
-				waiting_for_sample = False 
-			if not waiting_for_sample:
-				logger.debug("Checking remaining temp and valve queues.")
-				if temp_queue: # if there are temps left in the temp queue keep running through at same pres
-					logger.debug("Temp queue still exists.")
-					ready_for_temp_change = True
-				elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
-					logger.debug("Valve queue still exists.")
-					temp_queue = deque([6, 4, 2])
-					ready_for_pres_change = True
-				else: # if there are not temps and no pressures left the calibration is complete
-					app.status.set("Calibration complete!")
-					data_logger.info("Calibration complete.")
-					logger.info("Calibration complete!")
-					logger.info("Approx calibration time was: " + str(app.time_string.get()))
-					app.calibrating = False
-					return 
+			#TODO change this back to 600000
+			if equilibration_counter <= (10000 / interval):
+				equilibration_counter += 1
+				print(equilibration_counter)
+			else:
+				logger.debug("Waiting for sample.")
+				app.details.set("Waiting for sample.")
+				if app.refilling_fr:
+					logger.info("Refilling FR.")
+					app.details.set("Refilling FR.")
+				if not app.currently_sampling:
+					logger.info("Done sampling.")
+					app.details.set("Done sampling.")
+					data_logger.info("Sample taken.")
+					high_press, low_press, high_low_press = cc.read_press()
+					data_logger.info("Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop: ")
+					data_logger.info(bc.read_temp() + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press))
+					waiting_for_sample = False 
+				if not waiting_for_sample:
+					logger.debug("Checking remaining temp and valve queues.")
+					if temp_queue: # if there are temps left in the temp queue keep running through at same pres
+						logger.debug("Temp queue still exists.")
+						ready_for_temp_change = True
+					elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
+						logger.debug("Valve queue still exists.")
+						temp_queue = deque([6, 4, 2])
+						ready_for_pres_change = True
+					else: # if there are not temps and no pressures left the calibration is complete
+						app.status.set("Calibration complete!")
+						data_logger.info("Calibration complete.")
+						logger.info("Calibration complete!")
+						logger.info("Approx calibration time was: " + str(app.time_string.get()))
+						app.calibrating = False
+						return 
 
-	# check state every 5 seconds and take necessary next action if not waiting
-	app.after(5000, lambda: calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, waiting_for_temp, waiting_for_sample))
+	# check state every interval milli seconds and take necessary next action if not waiting
+	app.after(interval, lambda: calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, 
+		ready_for_temp_change, waiting_for_temp, waiting_for_sample, equilibration_counter, interval))
 
 
 def main():
