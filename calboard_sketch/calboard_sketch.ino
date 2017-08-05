@@ -12,10 +12,13 @@ int v9 = 47;
 
 int flushPin = 52;
 
-int pressPwr = 50;
+int pressPwr1 = 38;
+int pressPwr2 = 42;
+int pressPwr3 = 46;
+
 int pressHigh = A8;
-int pressLow = A9;
-int pressHighLow = A10;
+int pressLow = A10;
+int pressHighLow = A12;
 
 void setup() {
   Serial.begin(9600); // set the baud rate
@@ -35,7 +38,9 @@ void setup() {
  
   pinMode(flushPin, OUTPUT);
 
-  pinMode(pressPwr, OUTPUT);
+  pinMode(pressPwr1, OUTPUT);
+  pinMode(pressPwr2, OUTPUT);
+  pinMode(pressPwr3, OUTPUT);
   pinMode(pressHigh, INPUT);
   pinMode(pressLow, INPUT);
   pinMode(pressHighLow, INPUT);
@@ -147,7 +152,9 @@ void loop() {
       Serial.println("release_press");
     }
     else if (input == "press") {
-        digitalWrite(pressPwr, HIGH);
+        digitalWrite(pressPwr1, HIGH);
+        digitalWrite(pressPwr2, HIGH);
+        digitalWrite(pressPwr3, HIGH);
         delay(100);
         String pressValues = "";
         int valHigh = analogRead(pressHigh);

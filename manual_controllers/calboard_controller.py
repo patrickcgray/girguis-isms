@@ -27,7 +27,7 @@ logger.addHandler(handler2)
 logger.setLevel(logging.DEBUG)
 
 
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem14111']
 serial_check_list = [None] * len(serial_list)
 
 def check_serial():
@@ -134,10 +134,19 @@ class CalBoard_Controller():
 		press_list 		= map(int, pressures.split(", "))
 		high_press 		= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
 		low_press 		= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
-		high_low_press 	= 75.0 * (press_list[2]/1023.0) * 5.0 - 375.0
+		high_low_press 	= 750.0 * (press_list[2]/1023.0) * 5.0 - 375.0
 		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V)*.5V)
 
-		return (float("{0:.2f}".format(high_press)), float("{0:.2f}".format(low_press)), float("{0:.2f}".format(high_low_press)))
+		converted_pressures = [high_press, low_press, high_low_press]
+		final_pressures = []
+		print(converted_pressures)
+		for pressure in converted_pressures:
+			if pressure < 0.00:
+				pressure = 0.00
+			pressure = float("{0:.2f}".format(pressure))
+			final_pressures.append(pressure)
+
+		return(final_pressures)
 
 
 def check_health():

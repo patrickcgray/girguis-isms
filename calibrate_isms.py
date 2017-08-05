@@ -37,7 +37,7 @@ data_logger.setLevel(logging.INFO)
 ### Serial Device Controllers ###
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial209']
+serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
 # TODO need a version of this that works for Windows
 serial_check_list = [None] * len(serial_list)
 
@@ -330,15 +330,22 @@ class CalBoard_Controller(Controller_Parent):
 
 	def read_press(self):
 		#Command to get the pressure transducer values
-		# three values of the form "high_press, low_press, high_low_press" returned as a list of ints
+		# three values of the form "high_press, low_press, high_low_press" returned as a list of floats
 		pressures 		= self.cmd_controller("press")
 		press_list 		= map(int, pressures.split(", "))
 		high_press 		= 2000.0 * (press_list[0]/1023.0) * 5.0 - 1000.0
 		low_press 		= 75.0   * (press_list[1]/1023.0) * 5.0 - 37.5
-		high_low_press 	= 75.0 * (press_list[2]/1023.0) * 5.0 - 375.0
+		high_low_press 	= 750.0 * (press_list[2]/1023.0) * 5.0 - 375.0
 		#pressure 	= max pressure/(4.5V-.5V) * (voltage/max voltage) * 5V - offset (max pressure/(4.5V-.5V)*.5V)
 
-		return (float("{0:.2f}".format(high_press)), float("{0:.2f}".format(low_press)), float("{0:.2f}".format(high_low_press)))
+		converted_pressures = [high_press, low_press, high_low_press]
+		final_pressures = []
+		for pressure in converted_pressures:
+			if pressure < 0.00:
+				pressure = 0.00
+			pressure = float("{0:.2f}".format(pressure))
+			final_pressures.append(pressure)
+		return(final_pressures)
 
 
 
@@ -432,8 +439,6 @@ class MFC_Controller_Two(MFC_Controller_Parent):
 		logger.debug("Connected over serial at " + str(self.ser.name))
 		self.serial_num = 'Srnm210704\x8c\x92\r'
 		self.turn_on()
-
-		# Will need to look at app.current_gas in order to appropriately set the gas index on the MFC
 
 # not currently in use, just a skeleton controller for commanding the future sampling setup
 class Sampling_Controller(Controller_Parent):
@@ -549,7 +554,9 @@ class Application(tk.Frame):
 
 		quit_frame = tk.Frame(self, borderwidth=2, relief=tk.GROOVE, pady=10, padx=10, bg="grey")
 		quit_frame.grid(column=2, row=3, sticky=tk.SE)
-		ttk.Button(quit_frame, text='Quit', command= lambda: self.kill()).grid(column=1, row=1)
+		
+		ttk.Button(quit_frame, text='Quit', command= lambda: self.kill()).grid(column=1, row=1, padx=5, pady=5)
+		ttk.Button(quit_frame, text='Quit AND Purge', command= lambda: self.quite_and_purge()).grid(column=1, row=2, padx=5, pady=5)
 		
 		# create padding for all items
 		for child in self.winfo_children():
@@ -573,19 +580,18 @@ class Application(tk.Frame):
 		if self.safe_to_kill:
 			self.quit()
 		else:
-			#TODO do I need to kill anything else here to be safe?
 			#TODO make sure I set up multiple try blocks here otherwise it will bail after any one error
 			try:
 				bc = Bath_Controller(self)
 				bc.stop_bath()
 				bc.ser.close()
-				# also need to kill the pump
+				
 				pc = Pump_Controller()
 				pc.stop_pump()
 				pc.ser.close()
 
 				vc = Valve_Controller(self)
-				vc.set_valve(1)
+				vc.set_valve(1) # setting to 0 psi state
 				vc.ser.close()
 
 				cc = CalBoard_Controller()
@@ -599,6 +605,82 @@ class Application(tk.Frame):
 				logger.error(template)
 				logger.warn("Not able to kill one or more serial devices.")
 				self.quit()
+
+	def quite_and_purge(self):
+		t = tk.Toplevel(self, padx=50, pady=50)
+		t.title("Quit and Purge Procedure")
+
+		ttk.Label(t, text="Procedure Step 1 (automatic): Shutoff Bath -> Shutoff HPLC Pump -> Depressurize High Press Loop -> Begin Emptying FR of Seawater").grid(column = 2, row = 1)
+		ttk.Label(t, text="Procedure Step 2 (manual): Push 'Done purging seawater' -> Push 'Done refilling with DI water' -> Push 'Done purging DI water'").grid(column = 2, row = 2)
+
+		ttk.Button(t, text="Done purging seawater", command=self.done_purging_seawater).grid(column=2, row=3)
+		ttk.Button(t, text="Done refilling with DI water", command=self.done_refilling_with_di).grid(column=2, row=4)
+		ttk.Button(t, text='Done purging DI water', command=self.done_with_purge_quit).grid(column=2, row=5)
+
+		for child in t.winfo_children():
+			child.grid_configure(padx=5, pady=5, sticky=tk.W)
+
+		bc = Bath_Controller(self)
+		bc.stop_bath()
+		bc.ser.close()
+
+		pc = Pump_Controller()
+		pc.stop_pump()
+		pc.ser.close()
+		
+		vc = Valve_Controller(self)
+		vc.set_valve(1) # setting to 0 psi state
+		vc.ser.close()
+
+		cc = CalBoard_Controller()
+		cc.emptying_fr()
+		cc.ser.close()
+
+	def done_purging_seawater(self):
+		cc = CalBoard_Controller()
+		cc.di_water_in()
+		cc.flush_on()
+		cc.ser.close()
+
+	def done_refilling_with_di(self):
+		# set up quick run through of all BPVs to clean them out
+		cc = CalBoard_Controller()
+		cc.normal_operation("v9")
+		time.sleep(1)
+		vc = Valve_Controller(self)
+		vc.set_valve(1) # setting to 0 psi state
+		pc = Pump_Controller()
+		pc.turn_on()
+		time.sleep(4)
+		vc.set_valve(6) # setting to 1000 psi state
+		time.sleep(4)
+		vc.set_valve(5) # setting to 2000 psi state
+		time.sleep(4)
+		vc.set_valve(4) # setting to 3000 psi state
+		time.sleep(4)
+		vc.set_valve(3) # setting to 4000 psi state
+		time.sleep(4)
+		vc.set_valve(2) # setting to 5000 psi state
+		time.sleep(4)
+
+		# release pressure on high press loop and turn off pump and valve controller
+		vc.set_valve(1)
+		time.sleep(1)
+		pc.stop_pump()
+		vc.ser.close()
+		pc.ser.close()
+
+		# set calibration board to empty FR
+		cc.emptying_fr()
+		cc.ser.close()
+
+	def done_with_purge_quit(self):
+		# release pressure within low press loop and kill application
+		cc = CalBoard_Controller()
+		cc.release_press()
+		cc.ser.close()
+		self.safe_to_kill = True
+		self.quit()
 			
 	def create_manual_window(self):
 		if not self.system_healthy:
@@ -637,11 +719,11 @@ class Application(tk.Frame):
 		manual_window.destroy()
 
 	def create_setup_window(self):
-		#if not self.system_healthy:
-		#	err_msg = "System has not passed health check!"
-	#		self.errors.set(err_msg)
-	#		logger.warn(err_msg)
-	#	else:
+		if not self.system_healthy:
+			err_msg = "System has not passed health check!"
+			self.errors.set(err_msg)
+			logger.warn(err_msg)
+		else:
 			logger.info("Setting up calibration parameters.")
 			t = tk.Toplevel(self, padx=50, pady=50)
 			t.title("Calibration Setup")
@@ -677,32 +759,34 @@ class Application(tk.Frame):
 	def calibration_setup(self, setup_window):
 		# turning on the MFCs
 		mfc1 = MFC_Controller_One(self)
-		mfc2 = MFC_Controller_Two(self)
+		#mfc2 = MFC_Controller_Two(self)
 		
 		mfc1.set_setpoint(self.mfc1_flow.get())
-		mfc2.set_setpoint(self.mfc2_flow.get())
+		#mfc2.set_setpoint(self.mfc2_flow.get())
 
 		mfc1.set_gas(8) 	#setting gas to Nitrogen
-		mfc1.set_gas(self.gas_selected) 	#setting gas to gas_selected
+		#mfc2.set_gas(self.gas_selected) 	#setting gas to gas_selected
 
 		mfc1.ser.close()
-		mfc2.ser.close()
+		#mfc2.ser.close()
 
 		vc = Valve_Controller(self)
 		cc = CalBoard_Controller()
 
 		# get solenoid valves in correct state
-		cc.normal_operation_v9(self.gas_outlet.get()) 				# put the calibration board into normal calibration operation state
+		cc.normal_operation(self.gas_outlet.get()) 	# put the calibration board into normal calibration operation state
 		vc.set_valve(1) 			# setting the valve to the zero pressure setting
 		time.sleep(1)				# wait for valco to get set
 		vc.ser.close()
+		print(cc.read_press())
 		cc.ser.close()
 
 		#TODO do I want the HPLC pump running for this hour?
 
 		# send the bath to 2 degrees
 		bc = Bath_Controller(self)
-		bc.change_temp(2)
+		# TODO change this back to 2
+		bc.change_temp(20.1)
 		bc.ser.close()
 
 		data_logger.info("MFCs On.")
@@ -716,7 +800,8 @@ class Application(tk.Frame):
 		setup_window.destroy()
 
 	def wait_for_cooldown(self, counter):
-		if counter >= 120:
+		#todo change back to 120
+		if counter >= 3:
 			data_logger.info("Cooling + Pressurization Complete!")
 			logger.info("Cooling + Pressurization Complete!")
 			self.status.set("Calibration setup complete!")
@@ -724,7 +809,8 @@ class Application(tk.Frame):
 		else:
 			logger.info("Cooling + Pressurization Ongoing. " + str((120 - counter) *30) + " seconds remain.")
 			counter += 1
-			self.after(30000, lambda: self.wait_for_cooldown(counter))
+			#TODO change back to 30000
+			self.after(5000, lambda: self.wait_for_cooldown(counter))
 
 	def update_temp(self, current_temp):
 		self.temp_readout.set(current_temp)
@@ -975,7 +1061,7 @@ def calibrate_master(app):
 	### Startup Procedure
 
 	# get solenoid valves in correct state
-	cc.normal_operation(self.gas_outlet.get()) 	# put the calibration board into normal calibration operation state
+	cc.normal_operation(app.gas_outlet.get()) 	# put the calibration board into normal calibration operation state
 	vc.set_valve(1) 			# setting the valve to the zero pressure setting
 	time.sleep(1)				# wait for valco to get set
 
@@ -991,12 +1077,13 @@ def calibrate_master(app):
 		# or do it in the Setup Calibration section
 
 	# operational values for queues
-	valve_queue    = deque([1, 6, 5, 4, 3, 2])
-	temp_queue         = deque([6, 4, 2])
+	# todo change back to these values!
+	#valve_queue    = deque([1, 6, 5, 4, 3, 2])
+	#temp_queue         = deque([6, 4, 2])
 
 	# testing values for queues
-	#valve_queue     = deque([5, 4])
-	#temp_queue      = deque([20.1, 20.2])
+	valve_queue     = deque([1, 6, 5])
+	temp_queue      = deque([20.1, 20.2])
 
 	# equilibration counter, needs to equal 600000 ms / interval ms
 	equilibration_counter = 0
@@ -1010,7 +1097,7 @@ def calibrate_master(app):
 	waiting_for_sample      = False # this is set true after temp reached and before sampling is done
 	app.currently_sampling  = False # this is a temp solution until the real Sampling Controller is designed
 	app.refilling_fr        = False # flag that is changed to True when FR refill button is pushed 
-	app.paused				= True 	# the station starts paused so that the user can wait for it to pressurize  
+	app.paused				= False # the app starts out unpaused and ready to roll
 
 	data_logger.info("Calibration algorithm beginning.")
 	calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, ready_for_temp_change, 
@@ -1026,6 +1113,7 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 	else:
 		app.details.set("Calibration ongoing.")
 		logger.debug("Calibration ongoing.")
+		logger.debug("Pressure is: " + str(cc.read_press()))
 		if ready_for_pres_change:
 			logger.debug("Ready for pressure change.")
 			valve_port = valve_queue.popleft()
@@ -1033,7 +1121,8 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			data_logger.info("Pressure set to BPV " + str(valve_port))
 			#TODO need to fix pressure transducers or just use pump press reading
 			high_press, low_press, high_low_press = cc.read_press()
-			logger.info("Pressure is: " + str(high_press) + ', ' + str(low_press))
+			logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
+			data_logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
@@ -1046,46 +1135,54 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 		if waiting_for_temp:
 			logger.debug("Waiting for temp equilibration.")
 			if(bc.check_temp()): # returns True if bath is at set_temp is met
-				logger.debug("Temperature reached.")
-				data_logger.info("Temp reached setpoint.")
-				waiting_for_temp = False
-				waiting_for_sample = True
-				app.currently_sampling = True
+				#TODO change this back to 600000
+				if equilibration_counter <= (10000 / interval):
+					logger.debug("Temperature reached. Waiting for equilibration.")
+					data_logger.info("Temp reached setpoint. Waiting for equilibration.")
+					equilibration_counter += 1
+					print("equilibration counter")
+					print(equilibration_counter)
+				else:
+					logger.debug("Temperature reached. Equilibration done!")
+					data_logger.info("Temp reached setpoint. Equilibration done!")
+					equilibration_counter = 0
+					waiting_for_temp = False
+					waiting_for_sample = True
+					app.currently_sampling = True
 		if waiting_for_sample:
-			#TODO change this back to 600000
-			if equilibration_counter <= (10000 / interval):
-				equilibration_counter += 1
-				print(equilibration_counter)
-			else:
-				logger.debug("Waiting for sample.")
-				app.details.set("Waiting for sample.")
-				if app.refilling_fr:
-					logger.info("Refilling FR.")
-					app.details.set("Refilling FR.")
-				if not app.currently_sampling:
-					logger.info("Done sampling.")
-					app.details.set("Done sampling.")
-					data_logger.info("Sample taken.")
-					high_press, low_press, high_low_press = cc.read_press()
-					data_logger.info("Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop: ")
-					data_logger.info(bc.read_temp() + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press))
-					waiting_for_sample = False 
-				if not waiting_for_sample:
-					logger.debug("Checking remaining temp and valve queues.")
-					if temp_queue: # if there are temps left in the temp queue keep running through at same pres
-						logger.debug("Temp queue still exists.")
-						ready_for_temp_change = True
-					elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
-						logger.debug("Valve queue still exists.")
-						temp_queue = deque([6, 4, 2])
-						ready_for_pres_change = True
-					else: # if there are not temps and no pressures left the calibration is complete
-						app.status.set("Calibration complete!")
-						data_logger.info("Calibration complete.")
-						logger.info("Calibration complete!")
-						logger.info("Approx calibration time was: " + str(app.time_string.get()))
-						app.calibrating = False
-						return 
+			logger.debug("Waiting for sample.")
+			app.details.set("Waiting for sample.")
+			if app.refilling_fr:
+				logger.info("Refilling FR.")
+				app.details.set("Refilling FR.")
+			if not app.currently_sampling:
+				logger.info("Done sampling.")
+				app.details.set("Done sampling.")
+				data_logger.info("Sample taken.")
+				high_press, low_press, high_low_press = cc.read_press()
+				data_logger.info("Sample Data: Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop: ")
+				data_logger.info("Sample Data: " + str(bc.read_temp()) + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press))
+				waiting_for_sample = False 
+			if not waiting_for_sample:
+				logger.debug("Checking remaining temp and valve queues.")
+				if temp_queue: # if there are temps left in the temp queue keep running through at same pres
+					logger.debug("Temp queue still exists.")
+					ready_for_temp_change = True
+				elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
+					logger.debug("Valve queue still exists.")
+					# operational values
+					#temp_queue = deque([6, 4, 2])
+					# test values
+					temp_queue = deque([20.1, 20.2])
+					logger.debug("Refilled temp queue")
+					ready_for_pres_change = True
+				else: # if there are not temps and no pressures left the calibration is complete
+					app.status.set("Calibration complete!")
+					data_logger.info("Calibration complete.")
+					logger.info("Calibration complete!")
+					logger.info("Approx calibration time was: " + str(app.time_string.get()))
+					app.calibrating = False
+					return 
 
 	# check state every interval milli seconds and take necessary next action if not waiting
 	app.after(interval, lambda: calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres_change, 
