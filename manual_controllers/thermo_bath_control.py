@@ -11,7 +11,8 @@ from Tkinter import *
 import ttk
 import time
 
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/ttyUSB1', '/dev/ttyUSB2']
+#serial_list = ['/dev/tty.usbserial-A800dars', '/dev/ttyUSB1', '/dev/ttyUSB2']
+serial_list = ['COM29', '', '']
 serial_check_list = [None] * len(serial_list)
 
 def check_serial():
@@ -46,7 +47,7 @@ def command_bath():
 		# run through a couple commands for the bath
 		# for RS-232: pin 2-TX, 3-RX, 5-GND
 
-		ser = serial.Serial('/dev/tty.usbserial-A800dars', 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
+		ser = serial.Serial(serial_list[0], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 
 		print(ser.name)
 

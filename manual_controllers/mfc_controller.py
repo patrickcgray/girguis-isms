@@ -29,7 +29,8 @@ logger.setLevel(logging.DEBUG)
 
 from calcCRC import calcCRC
 
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411', '/dev/tty.usbserial']
+#serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbserial-AE01I93I', '/dev/tty.usbmodem1411', '/dev/tty.usbserial']
+serial_list = ['', '', '', '', 'COM32']
 serial_check_list = [None] * len(serial_list)
 
 def check_serial():
@@ -56,11 +57,11 @@ class MFC_Controller_One():
 
 	def is_healthy(self):
 		# for the new SmartTrak 100 MFC_2
-		#if (self.cmd_controller("?Srnm") == 'Srnm210704\x8c\x92\r'):
+		if (self.cmd_controller("?Srnm") == 'Srnm210704\x8c\x92\r'):
 		# max flow: Sinv200.400\xcd*\r
 
 		# for the old SmartTrak 2 MFC_1
-		if (self.cmd_controller("?Srnm") == 'Srnm138308\x9e~\r'):
+		#if (self.cmd_controller("?Srnm") == 'Srnm138308\x9e~\r'):
 		# max flow Sinv560.399\xf7\xae\r
 			return(True)
 		else:
@@ -110,6 +111,7 @@ class MFC_Controller_One():
 	def cmd_controller(self, cmd):
 		crc = calcCRC(cmd)
 		cmd = cmd + (crc) + '\x0d'
+		print(cmd)
 		self.ser.write(cmd)
 		ser_rsp = self.ser.read(200)
 		logger.debug("Output from MFC Controller cmd with repr(): " + repr(ser_rsp))
@@ -135,7 +137,7 @@ def check_health():
 def run_cmds():
 	mc_1 = MFC_Controller_One()
 	#if mc_1.is_healthy():
-		#print("We're healthy!!!")
+	#	print("We're healthy!!!")
 	#mc_1.set_gas(8)
 	#mc_1.read_gas()
 	#mc_1.set_setpoint(150)

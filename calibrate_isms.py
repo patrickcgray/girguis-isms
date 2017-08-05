@@ -37,8 +37,8 @@ data_logger.setLevel(logging.INFO)
 ### Serial Device Controllers ###
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
-serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
-# TODO need a version of this that works for Windows
+#serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
+serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM32']
 serial_check_list = [None] * len(serial_list)
 
 # abstract class that controller's inherit from. these are the object oriented code to command and
