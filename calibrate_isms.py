@@ -42,7 +42,7 @@ data_logger.setLevel(logging.INFO)
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
 #serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
-serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM32']
+serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM35']
 serial_check_list = [None] * len(serial_list)
 
 # abstract class that controller's inherit from. these are the object oriented code to command and
@@ -239,7 +239,7 @@ class Pump_Controller(Controller_Parent):
 	def read_pressure(self):
 		pressure_rsp = self.cmd_controller("PR")
 		pressure = (pressure_rsp.split(",")[1])[:-1]
-		return(pressure)
+		return(pressure_rsp)
 
 	def set_pressure_limit(self, limit):
 		if(self.cmd_controller("UP" + str(limit)) == "OK/"):
@@ -268,6 +268,7 @@ class CalBoard_Controller(Controller_Parent):
 			return(False)
 
 	def cmd_controller(self, cmd):
+                print("command is " + cmd)
 		self.ser.write(b"" + cmd)
 		ser_rsp = self.ser.readline()
 		logger.debug("Output from Calibration Board Controller cmd: " + repr(ser_rsp))
@@ -316,12 +317,12 @@ class CalBoard_Controller(Controller_Parent):
 	# these two commands turn on and off the flush pump on the calibration board
 	def flush_on(self):
 		# Ensure that we're in state 2 before doing this
-		if (self.cmd_controller("flushOn") == "flushOn"):
+		if (self.cmd_controller("flushOn") == "flushOn\r\n"):
 			return True
 		return False
 
 	def flush_off(self):
-		if (self.cmd_controller("flushOff") == "flushOff"):
+		if (self.cmd_controller("flushOff") == "flushOff\r\n"):
 			return True
 		return False
 
@@ -331,6 +332,8 @@ class CalBoard_Controller(Controller_Parent):
 		self.flush_on()     # begin filling fluid reservoir
 
 	def stop_refill(self, gas_outlet="v9"):
+                if gas_outlet == "":
+                        gas_outlet = "v9"
 		self.flush_off()    				# turn off pump
 		time.sleep(2)       				# allow time for pressure to die down from flush pump
 		self.normal_operation(gas_outlet)   # change back to standard ISMS calibration operation state
@@ -363,7 +366,7 @@ class MFC_Controller_Parent(Controller_Parent):
 		self.ser = None
 
 	def is_healthy(self):
-		if (self.cmd_controller("?Srnm") == self.serial_num):
+		if (self.serial_num in self.cmd_controller("?Srnm")):
 			return(True)
 		else:
 			return(False)
@@ -413,7 +416,7 @@ class MFC_Controller_Parent(Controller_Parent):
 		crc = calcCRC(cmd)
 		cmd = cmd + (crc) + '\x0d'
 		self.ser.write(cmd)
-		ser_rsp = self.ser.read(200)
+		ser_rsp = self.ser.read(500)
 		logger.debug("Output from MFC Controller cmd with repr(): " + repr(ser_rsp))
 		logger.debug("Output from MFC Controller cmd *without* repr(): " + ser_rsp)
 		return(ser_rsp)
@@ -444,7 +447,7 @@ class MFC_Controller_Two(MFC_Controller_Parent):
 		time.sleep(1)
 		logger.info("Starting MFC Controller Two (Calibration Gas)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
-		self.serial_num = 'Srnm210704\x8c\x92\r'
+		self.serial_num = 'Srnm138308\x9e~\r'
 		self.turn_on()
 
 # not currently in use, just a skeleton controller for commanding the future sampling setup
@@ -1132,9 +1135,10 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			data_logger.info("Pressure set to BPV " + str(valve_port))
 			high_press, low_press, high_low_press = cc.read_press()
 			logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
-			logger.info("HPLC Pressure is: " + pc.read_pressure())
+                        hplc_pressure = str(pc.read_pressure())
+			logger.info("HPLC Pressure is: " + hplc_pressure)
 			data_logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
-			data_logger.info("HPLC Pressure is: " + pc.read_pressure())
+			data_logger.info("HPLC Pressure is: " + hplc_pressure)
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
@@ -1172,9 +1176,9 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 				app.details.set("Done sampling.")
 				data_logger.info("Sample taken.")
 				high_press, low_press, high_low_press = cc.read_press()
-				hplc_press = pc.read_pressure()
-				data_logger.info("Sample Data: Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop, HPLC Pressure ")
-				data_logger.info("Sample Data: " + str(bc.read_temp()) + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press), + hplc_press)
+				hplc_press = str(pc.read_pressure())
+				data_logger.info("Sample Data: Temp, HPLC Pressure, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop ")
+				data_logger.info("Sample Data: " + str(bc.read_temp()) + ", " + hplc_press + "," + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press))
 				waiting_for_sample = False 
 			if not waiting_for_sample:
 				logger.debug("Checking remaining temp and valve queues.")
