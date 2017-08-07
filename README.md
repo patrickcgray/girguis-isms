@@ -2,39 +2,35 @@
 
 This code allows the Girguis Lab In-Situ Mass Spectrometer to be calibrated automatically before a deployment.
 
-## Hardware:
-1x Temp Bath - Thermo Scientific Temperature Bath
-1x HPLC Pump - ChromTech Dual Piston HPLC Pump
-1x Arduino  - standard Arduino Mega 2560 for controlling the calibration board
-1x Calibration Board - custom setup with two high pressure loops for and one low pressure loop that simulations the deep sea pressure and gas environment allowing for calibration of the ISMS inlet
-2x Mass Flow Controllers - Sierra Instruments SmartTrak Series 100 Mass Flow Controller
-1x Valco 6-Port Valve - Valco Instruments 6-Port Valve Actuators
-
-## Operation of the ISMS Calibration Station
-Yeah we need to figure this out...
-
 ## File Overview
 **README.md**  # documentation  
 **calboard_sketch/calboard_sketch.ino** # sketch for the arduino connected to the Calibration Board  
-**manual_controllers/** # simplified controllers to allow manual commanding and testing of all devices
+**manual_controllers/** # simplified controllers to allow manual commanding and testing of all devices  
 **arduino_comm.py**  # test file for controlling arduino and commanding via python  
 **calibrate_isms.py** # main control file for calibrating the mass spec  
-**calcCRC.py** # simple python script to calculate the checksum required for serial comm with the MFCs
+**calcCRC.py** # simple python script to calculate the checksum required for serial comm with the MFCs  
 
+## Hardware:
+*  1x Temp Bath - Thermo Scientific Temperature Bath
+*  1x HPLC Pump - ChromTech Dual Piston HPLC Pump
+*  1x Arduino  - standard Arduino Mega 2560 for controlling the calibration board
+*  1x Calibration Board - custom setup with two high pressure loops for and one low pressure loop that simulations the deep sea pressure and gas environment allowing for calibration of the ISMS inlet
+*  2x Mass Flow Controllers - Sierra Instruments SmartTrak Series 100 Mass Flow Controller
+*  1x Valco 6-Port Valve - Valco Instruments 6-Port Valve Actuators
 
 ## Tech Stack
-* Python27
+* Python
    * Modules
       * Tkinter - Graphical Interface (Python interface to the TK GUI toolkit)
       * PySerial - access to serial comm functions
       
-## Tested Environments (recommended)
+### Tested Environments (recommended)
 * OSX or Windows 7
 
-## Tested Python Versions
+### Tested Python Versions
 * python27
 
-#### Setup
+## Setup
 * On OSX
    * pip install pyserial
    * Required Support/Drivers
