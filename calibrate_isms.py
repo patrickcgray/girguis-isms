@@ -15,7 +15,7 @@ import logging
 import math
 from calcCRC import calcCRC
 
-### Logging Configuration (using default python logging module)
+# logging configuration (using default python logging module)
 logger = logging.getLogger(__name__)
 showtime = time.strftime("%Y_%m_%d-%H_%M_%S", time.gmtime())
 handler = logging.FileHandler('_calibration_' + showtime + '.log')
@@ -34,7 +34,11 @@ data_handler.setFormatter(formatter)
 data_logger.addHandler(data_handler)
 data_logger.setLevel(logging.INFO)
 
+#################################
 ### Serial Device Controllers ###
+#################################
+
+#TODO add mfc2 in here
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
 #serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
@@ -184,13 +188,12 @@ class Valve_Controller(Controller_Parent):
 				if ser_rsp != "bad cmd":
 					logger.debug("Setting current valve to: " + str(valve_number))
 					self.app.current_valve.set(valve_number)
-					time.sleep(.5) # TODO need to calculate how long to wait for pump to match pressure
+					time.sleep(1)
 					return(True)
 		return(False)
 
 # controller for the HPLC pump
 class Pump_Controller(Controller_Parent):
-	#TODO need to look into fault clearing after overpressure
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[2], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1)
 		logger.info("Starting HPLC Pump Controller")
@@ -231,8 +234,13 @@ class Pump_Controller(Controller_Parent):
 		if(self.cmd_controller("ST") == "OK/"):
 			return(True)
 		else:
-			return(False)       
-	
+			return(False)
+
+	def read_pressure(self):
+		pressure_rsp = self.cmd_controller("PR")
+		pressure = (pressure_rsp.split(",")[1])[:-1]
+		return(pressure)
+
 	def set_pressure_limit(self, limit):
 		if(self.cmd_controller("UP" + str(limit)) == "OK/"):
 			return(True)
@@ -411,8 +419,7 @@ class MFC_Controller_Parent(Controller_Parent):
 		return(ser_rsp)
 
 	def turn_on(self):
-		#self.set_streaming_state("Echo")
-		pass
+		self.set_streaming_state("On")
 
 	def turn_off(self):
 		self.ser.close()
@@ -465,8 +472,9 @@ class Sampling_Controller(Controller_Parent):
 		else:
 			return(True)
 
-
-### Main Tkinter Application ###
+################################
+### Main tkinter Application ###
+################################
 
 # this is the actual GUI code that is executed in the main() function to create the GUI
 class Application(tk.Frame):
@@ -665,7 +673,6 @@ class Application(tk.Frame):
 
 		# release pressure on high press loop and turn off pump and valve controller
 		vc.set_valve(1)
-		time.sleep(1)
 		pc.stop_pump()
 		vc.ser.close()
 		pc.ser.close()
@@ -754,21 +761,19 @@ class Application(tk.Frame):
 
 			done_button.grid(sticky=tk.E)
 
-	#def set_variable(self):
-
 	def calibration_setup(self, setup_window):
 		# turning on the MFCs
 		mfc1 = MFC_Controller_One(self)
-		#mfc2 = MFC_Controller_Two(self)
-		
 		mfc1.set_setpoint(self.mfc1_flow.get())
-		#mfc2.set_setpoint(self.mfc2_flow.get())
-
-		mfc1.set_gas(8) 	#setting gas to Nitrogen
-		#mfc2.set_gas(self.gas_selected) 	#setting gas to gas_selected
-
+		mfc1.set_gas(8) 					#setting gas to Nitrogen
 		mfc1.ser.close()
+
+		#mfc2 = MFC_Controller_Two(self)
+		#mfc2.set_setpoint(self.mfc2_flow.get())
+		#mfc2.set_gas(self.gas_selected) 	#setting gas to gas_selected
 		#mfc2.ser.close()
+
+		data_logger.info("MFCs On.")
 
 		vc = Valve_Controller(self)
 		cc = CalBoard_Controller()
@@ -781,7 +786,15 @@ class Application(tk.Frame):
 		print(cc.read_press())
 		cc.ser.close()
 
-		#TODO do I want the HPLC pump running for this hour?
+		# turning on the HPLC pump
+		pc = Pump_Controller()
+		pc.set_pressure_limit(6000) # max press at 6000 psi
+		time.sleep(1)
+		pc.set_flow_rate(2000)		# 20ml/min
+		time.sleep(1)
+		pc.turn_on()				# setting to run state
+		data_logger.info("HPLC Pump On.")
+		pc.ser.close()
 
 		# send the bath to 2 degrees
 		bc = Bath_Controller(self)
@@ -789,7 +802,6 @@ class Application(tk.Frame):
 		bc.change_temp(20.1)
 		bc.ser.close()
 
-		data_logger.info("MFCs On.")
 		data_logger.info("Bath cooling to 2.")
 		self.status.set("Cooling + Pressurization Ongoing")
 		self.system_setup = True
@@ -800,14 +812,14 @@ class Application(tk.Frame):
 		setup_window.destroy()
 
 	def wait_for_cooldown(self, counter):
-		#todo change back to 120
+		# TODO change back to 120
 		if counter >= 3:
 			data_logger.info("Cooling + Pressurization Complete!")
 			logger.info("Cooling + Pressurization Complete!")
 			self.status.set("Calibration setup complete!")
 			self.details.set("Cooling down and pressure equilibration complete!")
 		else:
-			logger.info("Cooling + Pressurization Ongoing. " + str((120 - counter) *30) + " seconds remain.")
+			logger.info("Cooling + Pressurization Ongoing. " + str((120 - counter) * 30) + " seconds remain.")
 			counter += 1
 			#TODO change back to 30000
 			self.after(5000, lambda: self.wait_for_cooldown(counter))
@@ -875,7 +887,6 @@ class Application(tk.Frame):
 		bc.turn_on()
 		self.details.set("Commanding temp to " + str(input_temp))
 		logger.info("Commanding temp to " + str(input_temp))
-		# todo need to fix this!!
 		bc.check_temp()
 		bc.ser.close()
 
@@ -925,14 +936,16 @@ class Application(tk.Frame):
 		else:
 			self.gas_index = 1
 
-### Utility Functions
+#########################
+### Utility Functions ###
+#########################
 
 def check_serial():
 	for index, serial_port in enumerate(serial_list):
 		try:
-			ser = serial.Serial(serial_port, timeout=2)        # open serial port
+			ser = serial.Serial(serial_port, timeout=2)		# open serial port
 			serial_check_list[index] = ser.name     		# check which port was really used
-			ser.close()                             	# close port
+			ser.close()                             		# close port
 			logger.debug("Acquired serial connection.")
 		except Exception as e:
 			template = str(type(e).__name__) + " occured. Arguments:" + str(e.args)
@@ -1006,24 +1019,23 @@ def system_health_check(app):
 		# MFC controller is healthy and can continue
 		logger.debug("MFC Controller One is healthy, moving forward.\n\n")
 		mfc1.ser.close()
-		#mfc1.turn_off()
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "MFC One is unhealthy, stopping calibration.\n\n"
 		logger.error(err_msg)
-		#mfc1.turn_off()
+		mfc1.ser.close()
 		return(False)
 	"""
 	mfc2 = MFC_Controller_Two(app)
 	if (mfc2.is_healthy() == True):
 		# MFC controller is healthy and can continue
-		mfc2.turn_off()
+		mfc2.ser.close()
 		logger.debug("MFC Controller Two is healthy, moving forward.\n\n")
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "MFC Two is unhealthy, stopping calibration.\n\n"
 		logger.error(err_msg)
-		mfc2.turn_off()
+		mfc2.ser.close()
 		return(False)
 
 	"""
@@ -1038,7 +1050,9 @@ def system_health_check(app):
 	logger.debug("Precheck complete! System healthy.")
 	return(True)
 
-### END Utility Functions
+#######################
+### calibration app ###
+#######################
 
 # this is the main calibration function that is called and sets the system into its startup state
 def calibrate_master(app):
@@ -1072,9 +1086,6 @@ def calibrate_master(app):
 	time.sleep(1)
 	pc.turn_on()				# setting to run state
 	data_logger.info("HPLC Pump On.")
-
-	#TODO I need to setup something that allows the pressure to equalize in the FR and allows temp to equalize
-		# or do it in the Setup Calibration section
 
 	# operational values for queues
 	# todo change back to these values!
@@ -1119,10 +1130,11 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 			valve_port = valve_queue.popleft()
 			vc.set_valve(valve_port)
 			data_logger.info("Pressure set to BPV " + str(valve_port))
-			#TODO need to fix pressure transducers or just use pump press reading
 			high_press, low_press, high_low_press = cc.read_press()
 			logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
+			logger.info("HPLC Pressure is: " + pc.read_pressure())
 			data_logger.info("Pressure is: " + str(high_press) + '/' + str(high_low_press) + ', ' + str(low_press))
+			data_logger.info("HPLC Pressure is: " + pc.read_pressure())
 			ready_for_pres_change = False
 			ready_for_temp_change = True
 		if ready_for_temp_change:
@@ -1160,8 +1172,9 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 				app.details.set("Done sampling.")
 				data_logger.info("Sample taken.")
 				high_press, low_press, high_low_press = cc.read_press()
-				data_logger.info("Sample Data: Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop: ")
-				data_logger.info("Sample Data: " + str(bc.read_temp()) + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press))
+				hplc_press = pc.read_pressure()
+				data_logger.info("Sample Data: Temp, High Pressure Loop, High Pressure Loop with low end accuracy, Low Pressure Loop, HPLC Pressure ")
+				data_logger.info("Sample Data: " + str(bc.read_temp()) + ", " + str(high_press) + ', ' + str(high_low_press) + ', ' + str(low_press), + hplc_press)
 				waiting_for_sample = False 
 			if not waiting_for_sample:
 				logger.debug("Checking remaining temp and valve queues.")
