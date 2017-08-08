@@ -1,9 +1,11 @@
 '''
+
 Created on Mar, 03 2017
 
-@author: pgray
+@author: 		Patrick Gray
+@email: 		pgrayobx@gmail.com
+@description: 	Desktop calibration app for Girguis ISMS
 
-@description: desktop calibration app for Girguis ISMS
 '''
 
 import Tkinter as tk
