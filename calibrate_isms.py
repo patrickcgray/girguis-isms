@@ -40,7 +40,7 @@ data_logger.setLevel(logging.INFO)
 
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
 #serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228', '/dev/tty.usbserial235']
-serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM35', 'COM37']
+serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM32', 'COM35']
 serial_check_list = [None] * len(serial_list)
 
 # abstract class that controller's inherit from. these are the object oriented code to command and
@@ -266,7 +266,6 @@ class CalBoard_Controller(Controller_Parent):
 			return(False)
 
 	def cmd_controller(self, cmd):
-                print("command is " + cmd)
 		self.ser.write(b"" + cmd)
 		ser_rsp = self.ser.readline()
 		logger.debug("Output from Calibration Board Controller cmd: " + repr(ser_rsp))
@@ -427,7 +426,8 @@ class MFC_Controller_Parent(Controller_Parent):
 		return(ser_rsp)
 
 	def turn_on(self):
-		self.set_streaming_state("On")
+		#self.set_streaming_state("On")
+                pass
 
 	def turn_off(self):
 		self.ser.close()
@@ -454,7 +454,7 @@ class MFC_Controller_Two(MFC_Controller_Parent):
 		logger.info("Starting MFC Controller Two (Calibration Gas)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
 		# this is the serial num for the old Smart Trak 2
-		self.serial_num = 'Srnm138308\x9e~\r'
+		self.serial_num = 'Srnm1380145\x93\r'
 		self.turn_on()
 
 # not currently in use, just a skeleton controller for commanding the future sampling setup
@@ -987,7 +987,7 @@ def system_health_check(app):
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
-
+        """
 	vc = Valve_Controller(app)
 	if (vc.is_healthy() == True):
 		# valve controller is healthy and can continue
@@ -999,7 +999,8 @@ def system_health_check(app):
 		app.errors.set(err_msg)
 		logger.error(err_msg)
 		return(False)
-
+        """
+        
 	pc = Pump_Controller()
 	if (pc.is_healthy() == True):
 		# pump controller is healthy and can continue
