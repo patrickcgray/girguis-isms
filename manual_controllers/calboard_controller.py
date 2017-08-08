@@ -7,8 +7,8 @@ class CalBoard_Controller():
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[0], 9600, timeout=3)
 		time.sleep(1)
-		logger.info("Starting Calibration Board Controller")
-		logger.debug("Connected over serial at " + str(self.ser.name))
+		print("Starting Calibration Board Controller")
+		print("Connected over serial at " + str(self.ser.name))
 
 	def is_healthy(self):
 		if (self.cmd_controller("?") == '1\r\n'):
@@ -19,9 +19,9 @@ class CalBoard_Controller():
 	def cmd_controller(self, cmd):
 		self.ser.write(b"" + cmd)
 		ser_rsp = self.ser.readline()
-		logger.debug("Output from Calibration Board Controller cmd: " + repr(ser_rsp))
+		print("Output from Calibration Board Controller cmd: " + repr(ser_rsp))
 		if ser_rsp == "F001\r\n":
-			logger.error("Error from Calibration Board Controller: " + repr(ser_rsp))
+			print("Error from Calibration Board Controller: " + repr(ser_rsp))
 			return("bad cmd")
 		else:
 			return(ser_rsp)
@@ -30,6 +30,12 @@ class CalBoard_Controller():
 		pass
 
 	# these commands change the state of the solenoid valves on the calibration board
+        def reset(self):
+		# turning off all solenoid valves and putting back into startup state
+		if self.cmd_controller("reset") == "reset\r\n":
+			return True
+		return False
+
 	def normal_operation(self, gas_outlet="v9"):
 		# Normal operation while running the mass spec with gas outlet v9
 		if self.cmd_controller("normal_operation_" + gas_outlet) == "normal_operation_" + gas_outlet + "\r\n":

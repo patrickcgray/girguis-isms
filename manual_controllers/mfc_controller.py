@@ -4,24 +4,24 @@ import time
 
 from calcCRC import calcCRC
 
-serial_list = ['COM32']
+serial_list = ['COM35']
 
 
 class MFC_Controller_One():
 	def __init__(self):
 		self.ser = serial.Serial(serial_list[0], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
 		time.sleep(1)
-		logger.info("Starting MFC Controller")
-		logger.debug("Connected over serial at " + str(self.ser.name))
+		print("Starting MFC Controller")
+		print("Connected over serial at " + str(self.ser.name))
 		self.turn_on()
 
 	def is_healthy(self):
 		# for the new SmartTrak 100 MFC_2
-		if (self.cmd_controller("?Srnm") == 'Srnm210704\x8c\x92\r'):
+		#if ('Srnm210704\x8c\x92\r' in self.cmd_controller("?Srnm")):
 		# max flow: Sinv200.400\xcd*\r
 
 		# for the old SmartTrak 2 MFC_1
-		#if (self.cmd_controller("?Srnm") == 'Srnm138308\x9e~\r'):
+		if ('Srnm1380145\x93\r' in self.cmd_controller("?Srnm")):
 		# max flow Sinv560.399\xf7\xae\r
 			return(True)
 		else:
@@ -74,8 +74,8 @@ class MFC_Controller_One():
 		print(cmd)
 		self.ser.write(cmd)
 		ser_rsp = self.ser.read(200)
-		logger.debug("Output from MFC Controller cmd with repr(): " + repr(ser_rsp))
-		logger.debug("Output from MFC Controller cmd *without* repr(): " + ser_rsp)
+		print("Output from MFC Controller cmd with repr(): " + repr(ser_rsp))
+		print("Output from MFC Controller cmd *without* repr(): " + ser_rsp)
 		return(ser_rsp)
 
 	def turn_on(self):
@@ -86,18 +86,18 @@ def check_health():
 	mc = MFC_Controller_One()
 	if (mc.is_healthy() == True):
 		# calboard controller is healthy and can continue
-		logger.debug("MFC Controller is healthy, moving forward.\n\n")
+		print("MFC Controller is healthy, moving forward.\n\n")
 		return(True)
 	else:
 		# something is wrong and need to trip a pause and alarm and wait for user input
 		err_msg = "MFC is unhealthy, stopping calibration.\n\n"
-		logger.error(err_msg)
+		print(err_msg)
 		return(False)
 
 def run_cmds():
 	mc_1 = MFC_Controller_One()
-	#if mc_1.is_healthy():
-	#	print("We're healthy!!!")
+	if mc_1.is_healthy():
+		print("We're healthy!!!")
 	#mc_1.set_gas(8)
 	#mc_1.read_gas()
 	#mc_1.set_setpoint(150)
