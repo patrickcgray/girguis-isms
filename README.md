@@ -14,7 +14,7 @@ This code allows the Girguis Lab In-Situ Mass Spectrometer to be calibrated auto
 *  1x Temp Bath - Thermo Scientific Temperature Bath
 *  1x HPLC Pump - ChromTech Dual Piston HPLC Pump
 *  1x Arduino  - standard Arduino Mega 2560 for controlling the calibration board
-*  1x Calibration Board - custom setup with two high pressure loops for and one low pressure loop that simulations the deep sea pressure and gas environment allowing for calibration of the ISMS inlet
+*  1x Calibration Board - custom setup with two high pressure loops for and one low pressure loop that simulates the deep sea pressure and gas environment allowing for calibration of the ISMS inlet
 *  2x Mass Flow Controllers - Sierra Instruments SmartTrak Series 100 Mass Flow Controller
 *  1x Valco 6-Port Valve - Valco Instruments 6-Port Valve Actuators
 
@@ -28,11 +28,14 @@ This code allows the Girguis Lab In-Situ Mass Spectrometer to be calibrated auto
 * OSX or Windows 7
 
 ### Tested Python Versions
-* python27
+* Python 2.7.x
 
 ## Setup
 * On OSX
-   * pip install pyserial
+   * install Python 2.7.x from https://www.python.org/downloads/mac-osx/
+   * from the terminal trype 'pip install pyserial'
+   * install git from https://git-scm.com/download/mac
+      * from the terminal type ‘git clone https://github.com/patrickcgray/girguis-isms.git’
    * Required Support/Drivers
       * Drivers for serial devices
          * FTDI: http://www.ftdichip.com/FTDrivers.htm 
