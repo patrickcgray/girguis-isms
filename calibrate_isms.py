@@ -38,11 +38,9 @@ data_logger.setLevel(logging.INFO)
 ### Serial Device Controllers ###
 #################################
 
-#TODO add mfc2 in here
-
 # [bath controller, valve controller, hplc controller, calboard controller, mfc controller_one, mfc controller two]
-#serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228']
-serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM35']
+#serial_list = ['/dev/tty.usbserial-A800dars', '/dev/tty.usbserial', '/dev/tty.usbmodem14131', '/dev/tty.usbmodem14111', '/dev/tty.usbserial228', '/dev/tty.usbserial235']
+serial_list = ['COM29', 'COM34', 'COM33', 'COM28', 'COM35', 'COM37']
 serial_check_list = [None] * len(serial_list)
 
 # abstract class that controller's inherit from. these are the object oriented code to command and
@@ -282,6 +280,13 @@ class CalBoard_Controller(Controller_Parent):
 		pass
 
 	# these commands change the state of the solenoid valves on the calibration board
+
+	def reset(self):
+		# turning off all solenoid valves and putting back into startup state
+		if self.cmd_controller("reset") == "reset\r\n":
+			return True
+		return False
+
 	def normal_operation(self, gas_outlet="v9"):
 		# Normal operation while running the mass spec with gas outlet v9
 		if self.cmd_controller("normal_operation_" + gas_outlet) == "normal_operation_" + gas_outlet + "\r\n":
@@ -436,6 +441,7 @@ class MFC_Controller_One(MFC_Controller_Parent):
 		time.sleep(1)
 		logger.info("Starting MFC Controller One (Nitrogen)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
+		# this is the serial num for the new Smart Trak 100
 		self.serial_num = 'Srnm210704\x8c\x92\r'
 		self.turn_on()
 
@@ -443,10 +449,11 @@ class MFC_Controller_One(MFC_Controller_Parent):
 # this is typically the calibration gas MFC
 class MFC_Controller_Two(MFC_Controller_Parent):
 	def __init__(self, app):
-		self.ser = serial.Serial(serial_list[4], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
+		self.ser = serial.Serial(serial_list[5], 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3)
 		time.sleep(1)
 		logger.info("Starting MFC Controller Two (Calibration Gas)")
 		logger.debug("Connected over serial at " + str(self.ser.name))
+		# this is the serial num for the old Smart Trak 2
 		self.serial_num = 'Srnm138308\x9e~\r'
 		self.turn_on()
 
@@ -591,7 +598,6 @@ class Application(tk.Frame):
 		if self.safe_to_kill:
 			self.quit()
 		else:
-			#TODO make sure I set up multiple try blocks here otherwise it will bail after any one error
 			try:
 				bc = Bath_Controller(self)
 				bc.stop_bath()
@@ -607,6 +613,8 @@ class Application(tk.Frame):
 
 				cc = CalBoard_Controller()
 				cc.release_press()
+				time.sleep(4)
+				cc.reset()
 				cc.ser.close()
 
 				self.safe_to_kill = True
@@ -688,6 +696,8 @@ class Application(tk.Frame):
 		# release pressure within low press loop and kill application
 		cc = CalBoard_Controller()
 		cc.release_press()
+		time.sleep(4)
+		cc.reset()
 		cc.ser.close()
 		self.safe_to_kill = True
 		self.quit()
@@ -771,10 +781,10 @@ class Application(tk.Frame):
 		mfc1.set_gas(8) 					#setting gas to Nitrogen
 		mfc1.ser.close()
 
-		#mfc2 = MFC_Controller_Two(self)
-		#mfc2.set_setpoint(self.mfc2_flow.get())
-		#mfc2.set_gas(self.gas_selected) 	#setting gas to gas_selected
-		#mfc2.ser.close()
+		mfc2 = MFC_Controller_Two(self)
+		mfc2.set_setpoint(self.mfc2_flow.get())
+		mfc2.set_gas(self.gas_selected) 	#setting gas to gas_selected
+		mfc2.ser.close()
 
 		data_logger.info("MFCs On.")
 
@@ -801,8 +811,10 @@ class Application(tk.Frame):
 
 		# send the bath to 2 degrees
 		bc = Bath_Controller(self)
-		# TODO change this back to 2
-		bc.change_temp(20.1)
+		# operationa value 
+		bc.change_temp(2)
+		# test value
+		#bc.change_temp(20.1)
 		bc.ser.close()
 
 		data_logger.info("Bath cooling to 2.")
@@ -815,8 +827,7 @@ class Application(tk.Frame):
 		setup_window.destroy()
 
 	def wait_for_cooldown(self, counter):
-		# TODO change back to 120
-		if counter >= 3:
+		if counter >= 120:
 			data_logger.info("Cooling + Pressurization Complete!")
 			logger.info("Cooling + Pressurization Complete!")
 			self.status.set("Calibration setup complete!")
@@ -824,8 +835,7 @@ class Application(tk.Frame):
 		else:
 			logger.info("Cooling + Pressurization Ongoing. " + str((120 - counter) * 30) + " seconds remain.")
 			counter += 1
-			#TODO change back to 30000
-			self.after(5000, lambda: self.wait_for_cooldown(counter))
+			self.after(30000, lambda: self.wait_for_cooldown(counter))
 
 	def update_temp(self, current_temp):
 		self.temp_readout.set(current_temp)
@@ -960,13 +970,11 @@ def system_health_check(app):
 	logger.info("Running through prechecks...")
 
 	# check that everything is attached to serial ports
-
-	# TODO change this to check for all serial connections and need to decide how I handle errors
 	if not any(check_serial()):
 		app.errors.set("ERROR: Serial connection issue.")
 		return(False)
 
-	### Test Health of Controllers
+	# test health of controllers
 	
 	bc = Bath_Controller(app)
 	if (bc.is_healthy() == True):
@@ -1028,7 +1036,7 @@ def system_health_check(app):
 		logger.error(err_msg)
 		mfc1.ser.close()
 		return(False)
-	"""
+	
 	mfc2 = MFC_Controller_Two(app)
 	if (mfc2.is_healthy() == True):
 		# MFC controller is healthy and can continue
@@ -1040,8 +1048,6 @@ def system_health_check(app):
 		logger.error(err_msg)
 		mfc2.ser.close()
 		return(False)
-
-	"""
 
 	# RGA controller
 
@@ -1091,13 +1097,12 @@ def calibrate_master(app):
 	data_logger.info("HPLC Pump On.")
 
 	# operational values for queues
-	# todo change back to these values!
-	#valve_queue    = deque([1, 6, 5, 4, 3, 2])
-	#temp_queue         = deque([6, 4, 2])
+	valve_queue    = deque([1, 6, 5, 4, 3, 2])
+	temp_queue         = deque([6, 4, 2])
 
 	# testing values for queues
-	valve_queue     = deque([1, 6, 5])
-	temp_queue      = deque([20.1, 20.2])
+	#valve_queue     = deque([1, 6, 5])
+	#temp_queue      = deque([20.1, 20.2])
 
 	# equilibration counter, needs to equal 600000 ms / interval ms
 	equilibration_counter = 0
@@ -1151,8 +1156,8 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 		if waiting_for_temp:
 			logger.debug("Waiting for temp equilibration.")
 			if(bc.check_temp()): # returns True if bath is at set_temp is met
-				#TODO change this back to 600000
-				if equilibration_counter <= (10000 / interval):
+				# counting down from 600 seconds every time temp is reached
+				if equilibration_counter <= (600000 / interval):
 					logger.debug("Temperature reached. Waiting for equilibration.")
 					data_logger.info("Temp reached setpoint. Waiting for equilibration.")
 					equilibration_counter += 1
@@ -1188,9 +1193,9 @@ def calibrate_slave(app, bc, vc, pc, cc, valve_queue, temp_queue, ready_for_pres
 				elif valve_queue: # if there are pressures left refill temp queue and move on to next pres
 					logger.debug("Valve queue still exists.")
 					# operational values
-					#temp_queue = deque([6, 4, 2])
+					temp_queue = deque([6, 4, 2])
 					# test values
-					temp_queue = deque([20.1, 20.2])
+					#temp_queue = deque([20.1, 20.2])
 					logger.debug("Refilled temp queue")
 					ready_for_pres_change = True
 				else: # if there are not temps and no pressures left the calibration is complete

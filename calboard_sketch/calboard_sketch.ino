@@ -55,7 +55,12 @@ void setup() {
   digitalWrite(v7, LOW);
   digitalWrite(v8, LOW);
   digitalWrite(v9, LOW);
+  
   digitalWrite(flushPin, LOW);
+  
+  digitalWrite(pressPwr1, HIGH);
+  digitalWrite(pressPwr2, HIGH);
+  digitalWrite(pressPwr3, HIGH);
 }
 
 void loop() {
@@ -150,6 +155,26 @@ void loop() {
       digitalWrite(v9, LOW);
       
       Serial.println("release_press");
+    }
+    else if (input == "reset") {
+      // setting the system back into startup mode to turn off all solenoid valves and other pins
+        digitalWrite(v1, LOW);
+        digitalWrite(v2, LOW);
+        digitalWrite(v3, LOW);
+        digitalWrite(v4, LOW);
+        digitalWrite(v5, LOW);
+        digitalWrite(v6, LOW);
+        digitalWrite(v7, LOW);
+        digitalWrite(v8, LOW);
+        digitalWrite(v9, LOW);
+  
+        digitalWrite(flushPin, LOW);
+        
+        digitalWrite(pressPwr1, LOW);
+        digitalWrite(pressPwr2, LOW);
+        digitalWrite(pressPwr3, LOW);
+
+        Serial.println("reset");
     }
     else if (input == "press") {
         digitalWrite(pressPwr1, HIGH);
